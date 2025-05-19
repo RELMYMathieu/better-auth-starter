@@ -1,14 +1,12 @@
 "use server";
 
-import { db } from "@/db";
-import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
-import { user } from "@/db/schema";
+import { APIError } from "better-auth/api";
 import { ActionResult } from "@/lib/schemas";
 import { registerSchema, RegisterSchema } from "@/lib/schemas";
 
 export async function registerUser(
-  formData: RegisterSchema
+  formData: RegisterSchema,
 ): Promise<ActionResult> {
   const parsed = registerSchema.safeParse(formData);
 
@@ -20,20 +18,6 @@ export async function registerUser(
   }
 
   const { email, password, name } = parsed.data;
-
-  // Check if the user already exists
-  const existingUser = await db
-    .select()
-    .from(user)
-    .where(eq(user.email, email))
-    .execute();
-
-  if (existingUser) {
-    return {
-      success: null,
-      error: { reason: "User already exists" },
-    };
-  }
 
   try {
     const { user } = await auth.api.signUpEmail({
@@ -50,10 +34,17 @@ export async function registerUser(
       data: { user: { id: user.id, email: user.email } },
     };
   } catch (error) {
-    console.error("Error creating user:", error);
-    return {
-      success: null,
-      error: { reason: "Error creating user" },
-    };
+    if (error instanceof APIError) {
+      switch (error.status) {
+        case "UNPROCESSABLE_ENTITY":
+          return { error: { reason: "User already exists." }, success: null };
+        case "BAD_REQUEST":
+          return { error: { reason: "Invalid email." }, success: null };
+        default:
+          return { error: { reason: "Something went wrong." }, success: null };
+      }
+    }
+
+    return { error: { reason: "Something went wrong." }, success: null };
   }
 }
