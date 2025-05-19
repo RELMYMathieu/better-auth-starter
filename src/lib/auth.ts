@@ -1,18 +1,31 @@
-import { betterAuth } from "better-auth";
-import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/db";
+import { hash } from "bcryptjs";
+import * as schema from "@/db/schema";
+import { betterAuth } from "better-auth";
+import { nextCookies } from "better-auth/next-js";
+import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
-    provider: "pg", // or "mysql", "sqlite"
+    provider: "pg",
+    schema: {
+      ...schema,
+      user: schema.user,
+    },
   }),
   emailAndPassword: {
     enabled: true,
   },
-  socialProviders: {
-    github: {
-      clientId: process.env.GITHUB_CLIENT_ID as string,
-      clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
-    },
-  },
+  // socialProviders: {
+  //   github: {
+  //     clientId: process.env.GITHUB_CLIENT_ID as string,
+  //     clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+  //   },
+  // },
+  plugins: [nextCookies()],
 });
+
+export async function hashPassword(password: string): Promise<string> {
+  // 10 salt rounds is a good default for bcrypt
+  return await hash(password, 10);
+}

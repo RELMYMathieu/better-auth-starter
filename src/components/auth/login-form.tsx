@@ -8,6 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { loginUser } from "../../app/auth/login/action";
+import { FormSuccess, FormError } from "./form-messages";
+import { useRouter } from "next/navigation";
 
 const schema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -27,13 +30,25 @@ const LoginForm = () => {
   });
 
   const [isVisible, setIsVisible] = useState(false);
+  const [formState, setFormState] = useState<{
+    success?: string;
+    error?: string;
+  }>({});
+
   const id = useId();
+  const router = useRouter();
 
   const toggleVisibility = () => setIsVisible((prev) => !prev);
 
-  const onSubmit = (data: FormData) => {
-    // TODO: handle login logic
-    console.log(data);
+  const onSubmit = async (data: FormData) => {
+    setFormState({});
+    const result = await loginUser(data);
+    if (result.success) {
+      setFormState({ success: result.success.reason });
+      router.push("/dashboard");
+    } else if (result.error) {
+      setFormState({ error: result.error.reason });
+    }
   };
 
   return (
@@ -41,6 +56,8 @@ const LoginForm = () => {
       onSubmit={handleSubmit(onSubmit)}
       className="flex w-full flex-col gap-5"
     >
+      <FormSuccess message={formState.success || ""} />
+      <FormError message={formState.error || ""} />
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input

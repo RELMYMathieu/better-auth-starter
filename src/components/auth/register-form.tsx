@@ -2,43 +2,39 @@
 
 import React from "react";
 import { useForm, Controller } from "react-hook-form";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import PasswordInput from "./password-input";
-
-const schema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z
-    .string()
-    .min(8, { message: "Password must be at least 8 characters" })
-    .regex(/[0-9]/, { message: "Password must contain at least one number" })
-    .regex(/[a-z]/, {
-      message: "Password must contain at least one lowercase letter",
-    })
-    .regex(/[A-Z]/, {
-      message: "Password must contain at least one uppercase letter",
-    }),
-});
-
-type FormData = z.infer<typeof schema>;
+import { registerSchema } from "@/lib/schemas";
+import { registerUser } from "@/app/auth/register/action";
+import { FormSuccess, FormError } from "./form-messages";
 
 const RegisterForm = () => {
+  const [formState, setFormState] = React.useState<{
+    success?: string;
+    error?: string;
+  }>({});
+
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
     control,
-  } = useForm<FormData>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+  } = useForm({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { name: "", email: "", password: "" },
   });
 
-  const onSubmit = (data: FormData) => {
-    // TODO: handle registration logic
-    console.log(data);
+  const onSubmit = async (data: import("../../lib/schemas").RegisterSchema) => {
+    setFormState({});
+    const result = await registerUser(data);
+    if (result.success) {
+      setFormState({ success: result.success.reason });
+    } else if (result.error) {
+      setFormState({ error: result.error.reason });
+    }
   };
 
   return (
@@ -46,6 +42,21 @@ const RegisterForm = () => {
       onSubmit={handleSubmit(onSubmit)}
       className="flex w-full flex-col gap-5"
     >
+      <FormSuccess message={formState.success || ""} />
+      <FormError message={formState.error || ""} />
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="name">Name</Label>
+        <Input
+          id="name"
+          type="text"
+          placeholder="Your name"
+          autoComplete="name"
+          {...register("name")}
+        />
+        {errors.name && (
+          <span className="text-xs text-red-500">{errors.name.message}</span>
+        )}
+      </div>
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
