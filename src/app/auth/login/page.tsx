@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { signInWithGithub } from "@/lib/auth-client";
 import LoginForm from "@/components/auth/login-form";
 import { Card, CardContent } from "@/components/ui/card";
 import { GoogleIcon, GithubIcon } from "@/components/ui/icons";
+import { signInWithGithub, signInWithGoogle } from "@/lib/auth-client";
 
 const LoginPage = () => {
   return (
@@ -29,6 +29,7 @@ const LoginPage = () => {
                 variant="outline"
                 className="w-1/2 flex items-center justify-center cursor-pointer"
                 type="button"
+                onClick={signInWithGoogle}
               >
                 <GoogleIcon className="mr-2" />
                 Google

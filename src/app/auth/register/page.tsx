@@ -1,10 +1,11 @@
-import React from "react";
-import RegisterForm from "@/components/auth/register-form";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+"use client";
+
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import RegisterForm from "@/components/auth/register-form";
 import { GoogleIcon, GithubIcon } from "@/components/ui/icons";
-import { signInWithGithub } from "@/lib/auth-client";
+import { signInWithGithub, signInWithGoogle } from "@/lib/auth-client";
 
 const RegisterPage = () => {
   return (
@@ -28,6 +29,7 @@ const RegisterPage = () => {
                 variant="outline"
                 className="w-1/2 flex items-center justify-center"
                 type="button"
+                onClick={signInWithGoogle}
               >
                 <GoogleIcon className="mr-2" />
                 Google
