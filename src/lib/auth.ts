@@ -1,5 +1,4 @@
 import { db } from "@/db";
-import { hash } from "bcryptjs";
 import * as schema from "@/db/schema";
 import { sendMail } from "@/lib/email";
 import { betterAuth } from "better-auth";
@@ -43,8 +42,3 @@ export const auth = betterAuth({
   },
   plugins: [nextCookies()],
 });
-
-export async function hashPassword(password: string): Promise<string> {
-  // 10 salt rounds is a good default for bcrypt
-  return await hash(password, 10);
-}

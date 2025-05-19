@@ -1,8 +1,10 @@
-import React from "react";
+"use client";
+
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { signInWithGithub } from "@/lib/auth-client";
 import LoginForm from "@/components/auth/login-form";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { GoogleIcon, GithubIcon } from "@/components/ui/icons";
 
 const LoginPage = () => {
@@ -25,7 +27,7 @@ const LoginPage = () => {
             <div className="flex flex-row gap-2 w-full">
               <Button
                 variant="outline"
-                className="w-1/2 flex items-center justify-center"
+                className="w-1/2 flex items-center justify-center cursor-pointer"
                 type="button"
               >
                 <GoogleIcon className="mr-2" />
@@ -33,8 +35,9 @@ const LoginPage = () => {
               </Button>
               <Button
                 variant="outline"
-                className="w-1/2 flex items-center justify-center"
+                className="w-1/2 flex items-center justify-center cursor-pointer"
                 type="button"
+                onClick={signInWithGithub}
               >
                 <GithubIcon className="mr-2" />
                 GitHub

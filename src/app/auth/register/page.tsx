@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { GoogleIcon, GithubIcon } from "@/components/ui/icons";
+import { signInWithGithub } from "@/lib/auth-client";
 
 const RegisterPage = () => {
   return (
@@ -35,6 +36,7 @@ const RegisterPage = () => {
                 variant="outline"
                 className="w-1/2 flex items-center justify-center"
                 type="button"
+                onClick={signInWithGithub}
               >
                 <GithubIcon className="mr-2" />
                 GitHub
