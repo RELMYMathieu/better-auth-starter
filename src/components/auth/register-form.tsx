@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import PasswordInput from "./password-input";
 import { registerSchema } from "@/lib/schemas";
 import { registerUser } from "@/app/auth/register/action";
-import { FormSuccess, FormError } from "./form-messages";
+import { FormSuccess, FormError } from "../ui/form-messages";
 
 const RegisterForm = () => {
   const [formState, setFormState] = React.useState<{

@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../app/auth/login/action";
-import { FormSuccess, FormError } from "./form-messages";
+import { FormSuccess, FormError } from "../ui/form-messages";
 
 const schema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
