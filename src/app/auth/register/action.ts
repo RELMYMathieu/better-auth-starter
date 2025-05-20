@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { APIError } from "better-auth/api";
 import { ActionResult } from "@/lib/schemas";
 import { registerSchema, RegisterSchema } from "@/lib/schemas";
+import { DEFAULT_LOGIN_REDIRECT } from "@/lib/config";
 
 export async function registerUser(
   formData: RegisterSchema,
@@ -25,11 +26,15 @@ export async function registerUser(
         email,
         password,
         name,
+        callbackURL: DEFAULT_LOGIN_REDIRECT,
       },
     });
 
     return {
-      success: { reason: "Registration successful" },
+      success: {
+        reason:
+          "Registration successful! Check your email to confirm your account.",
+      },
       error: null,
       data: { user: { id: user.id, email: user.email } },
     };
