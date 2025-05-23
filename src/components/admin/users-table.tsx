@@ -3,9 +3,6 @@ import {
   CheckCircle,
   XCircle,
   Mail,
-  Github,
-  Twitter,
-  ChromeIcon as Google,
   MoreHorizontal,
   Ban,
   Check,
@@ -33,85 +30,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { UserWithDetails } from "@/utils/users";
+import { GithubIcon, GoogleIcon } from "../ui/icons";
 
-// Mock data for users
-const users = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john.doe@example.com",
-    verified: true,
-    banned: false,
-    accounts: ["email", "google"],
-    lastSignIn: new Date("2023-05-20T10:30:00"),
-    createdAt: new Date("2022-01-15T08:45:00"),
-    avatarUrl: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane.smith@example.com",
-    verified: true,
-    banned: false,
-    accounts: ["email", "github", "twitter"],
-    lastSignIn: new Date("2023-05-18T14:20:00"),
-    createdAt: new Date("2022-02-10T11:30:00"),
-    avatarUrl: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: "3",
-    name: "Robert Johnson",
-    email: "robert.johnson@example.com",
-    verified: false,
-    banned: true,
-    accounts: ["email"],
-    lastSignIn: new Date("2023-04-05T09:15:00"),
-    createdAt: new Date("2022-03-22T16:45:00"),
-    avatarUrl: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: "4",
-    name: "Emily Davis",
-    email: "emily.davis@example.com",
-    verified: true,
-    banned: false,
-    accounts: ["email", "google", "github"],
-    lastSignIn: new Date("2023-05-21T11:45:00"),
-    createdAt: new Date("2022-01-30T13:20:00"),
-    avatarUrl: "/placeholder.svg?height=40&width=40",
-  },
-  {
-    id: "5",
-    name: "Michael Wilson",
-    email: "michael.wilson@example.com",
-    verified: true,
-    banned: false,
-    accounts: ["email", "twitter"],
-    lastSignIn: new Date("2023-05-19T16:30:00"),
-    createdAt: new Date("2022-02-28T10:15:00"),
-    avatarUrl: "/placeholder.svg?height=40&width=40",
-  },
-];
+interface UsersTableProps {
+  users: UserWithDetails[];
+}
 
 // Helper function to render account icons
 const getAccountIcon = (account: string) => {
   switch (account) {
-    case "email":
+    case "credential":
       return <Mail className="h-4 w-4" />;
     case "github":
-      return <Github className="h-4 w-4" />;
-    case "twitter":
-      return <Twitter className="h-4 w-4" />;
+      return <GithubIcon className="h-4 w-4" />;
     case "google":
-      return <Google className="h-4 w-4" />;
+      return <GoogleIcon className="h-4 w-4" />;
     default:
       return null;
   }
 };
 
-export function UsersTable() {
+export function UsersTable({ users }: UsersTableProps) {
   return (
-    <div className="overflow-hidden rounded-md border bg-card text-card-foreground shadow">
+    <div className="overflow-hidden">
       <Table className="text-sm">
         <TableHeader>
           <TableRow>
@@ -125,7 +67,7 @@ export function UsersTable() {
               Linked Accounts
             </TableHead>
             <TableHead className="px-4 py-3 text-xs font-medium text-muted-foreground">
-              Status
+              Ban Status
             </TableHead>
             <TableHead className="px-4 py-3 text-xs font-medium text-muted-foreground">
               Last Sign In
@@ -141,7 +83,6 @@ export function UsersTable() {
         <TableBody>
           {users.map((user) => (
             <TableRow key={user.id}>
-              {" "}
               <TableCell className="px-4 py-3">
                 <div className="flex items-center gap-4">
                   <Avatar>
@@ -162,7 +103,7 @@ export function UsersTable() {
                     </span>
                   </div>
                 </div>
-              </TableCell>{" "}
+              </TableCell>
               <TableCell className="px-4 py-3">
                 {user.verified ? (
                   <Badge
@@ -181,9 +122,9 @@ export function UsersTable() {
                     Unverified
                   </Badge>
                 )}
-              </TableCell>{" "}
+              </TableCell>
               <TableCell className="px-4 py-3">
-                <div className="flex gap-2">
+                <div className="flex -space-x-2">
                   {user.accounts.map((account) => (
                     <div
                       key={account}
@@ -197,13 +138,25 @@ export function UsersTable() {
               </TableCell>
               <TableCell className="px-4 py-3">
                 {user.banned ? (
-                  <Badge
-                    variant="destructive"
-                    className="flex items-center gap-1 px-2 py-1 text-xs"
-                  >
-                    <Ban className="h-3 w-3" />
-                    Banned
-                  </Badge>
+                  <div className="flex flex-col gap-1">
+                    <Badge
+                      variant="destructive"
+                      className="flex items-center gap-1 px-2 py-1 text-xs"
+                    >
+                      <Ban className="h-3 w-3" />
+                      Banned
+                    </Badge>
+                    {user.banReason && (
+                      <span className="text-xs text-muted-foreground italic">
+                        Reason: {user.banReason}
+                      </span>
+                    )}
+                    {user.banExpires && (
+                      <span className="text-xs text-muted-foreground">
+                        Expires: {format(user.banExpires, "MMM d, yyyy")}
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <Badge
                     variant="outline"
@@ -213,9 +166,11 @@ export function UsersTable() {
                     Active
                   </Badge>
                 )}
-              </TableCell>{" "}
+              </TableCell>
               <TableCell className="px-4 py-3 text-xs text-muted-foreground">
-                {format(user.lastSignIn, "MMM d, yyyy 'at' h:mm a")}
+                {user.lastSignIn
+                  ? format(user.lastSignIn, "MMM d, yyyy 'at' h:mm a")
+                  : "Never"}
               </TableCell>
               <TableCell className="px-4 py-3 text-xs text-muted-foreground">
                 {format(user.createdAt, "MMM d, yyyy 'at' h:mm a")}
@@ -227,7 +182,7 @@ export function UsersTable() {
                       <span className="sr-only">Open menu</span>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
-                  </DropdownMenuTrigger>{" "}
+                  </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="text-sm">
                     <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
                       Actions
@@ -236,11 +191,18 @@ export function UsersTable() {
                       <UserCog className="mr-2 h-4 w-4" />
                       <span>Edit User</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-xs">
-                      <Ban className="mr-2 h-4 w-4" />
-                      <span>{user.banned ? "Unban User" : "Ban User"}</span>
-                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />{" "}
+                    {user.banned ? (
+                      <DropdownMenuItem className="text-xs">
+                        <Ban className="mr-2 h-4 w-4" />
+                        <span>Unban User</span>
+                      </DropdownMenuItem>
+                    ) : (
+                      <DropdownMenuItem className="text-xs">
+                        <Ban className="mr-2 h-4 w-4" />
+                        <span>Ban User</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem className="text-xs text-destructive focus:text-destructive">
                       <Trash2 className="mr-2 h-4 w-4" />
                       <span>Delete User</span>

@@ -2,6 +2,7 @@ import { db } from "@/db";
 import * as schema from "@/db/schema";
 import { sendEmail } from "@/lib/email";
 import { betterAuth } from "better-auth";
+import { admin } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
@@ -45,5 +46,5 @@ export const auth = betterAuth({
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
     },
   },
-  plugins: [nextCookies()],
+  plugins: [nextCookies(), admin()],
 });
