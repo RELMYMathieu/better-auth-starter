@@ -6,14 +6,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import RegisterForm from "@/components/auth/register-form";
 import { GoogleIcon, GithubIcon } from "@/components/ui/icons";
 import { signInWithGithub, signInWithGoogle } from "@/lib/auth-client";
+import { GalleryVerticalEnd } from "lucide-react";
 
 const RegisterPage = () => {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="flex flex-col items-center w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-4">
-          Register for Zexanext
-        </h2>
+      <div className="flex flex-col items-center w-full max-w-md gap-6">
+        <a href="#" className="flex items-center gap-2 self-center font-medium">
+          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+            <GalleryVerticalEnd className="size-4" />
+          </div>
+          ZexaNext
+        </a>
         <Card className="w-full">
           <CardContent className="flex flex-col gap-4 pt-6">
             <RegisterForm />
