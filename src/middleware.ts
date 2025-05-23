@@ -1,27 +1,16 @@
-import type { auth } from "@/lib/auth";
 import { isPublicPath } from "@/lib/public-paths";
-import { betterFetch } from "@better-fetch/fetch";
 import { DEFAULT_LOGIN_REDIRECT } from "@/lib/config";
+import { getSessionCookie } from "better-auth/cookies";
 import { NextRequest, NextResponse } from "next/server";
-
-type Session = typeof auth.$Infer.Session;
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Get authentication status for all routes
-  const { data: session } = await betterFetch<Session>(
-    "/api/auth/get-session",
-    {
-      baseURL: request.nextUrl.origin,
-      headers: {
-        cookie: request.headers.get("cookie") || "",
-      },
-    },
-  );
+  const sessionCookie = getSessionCookie(request);
 
   // If user is already logged in and trying to access auth pages, redirect to dashboard
-  if (session && pathname.startsWith("/auth/")) {
+  if (sessionCookie && pathname.startsWith("/auth/")) {
     return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, request.url));
   }
 
@@ -31,7 +20,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // For protected paths, check authentication
-  if (!session) {
+  if (!sessionCookie) {
     return NextResponse.redirect(new URL("/auth/login", request.url));
   }
 
