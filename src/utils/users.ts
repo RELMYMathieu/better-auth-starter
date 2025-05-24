@@ -1,4 +1,6 @@
 import { db } from "@/db";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 export interface UserWithDetails {
   id: string;
@@ -15,8 +17,17 @@ export interface UserWithDetails {
 }
 
 export async function getUsers(): Promise<UserWithDetails[]> {
-  // Get all users with their basic information
-  const result = await db.query.user.findMany();
+  // Get all users (protected by auth for only admin access)
+  const result = await auth.api.listUsers({
+    headers: await headers(),
+    query: {
+      limit: 100,
+    },
+  });
+
+  if (!result.users) {
+    return [];
+  }
 
   // Query separate tables to get accounts information
   const accountsQuery = await db.query.account.findMany({
@@ -59,7 +70,7 @@ export async function getUsers(): Promise<UserWithDetails[]> {
   );
 
   // Transform the raw data into the format expected by the UsersTable component
-  return result.map((user) => {
+  return result.users.map((user) => {
     const accounts = accountsByUser[user.id] || [];
 
     // If the banned field is null or undefined, default to false
@@ -80,7 +91,7 @@ export async function getUsers(): Promise<UserWithDetails[]> {
       accounts,
       lastSignIn: lastSignInByUser[user.id] || null,
       createdAt: user.createdAt,
-      avatarUrl: user.image || `/placeholder.svg?height=40&width=40`,
+      avatarUrl: user.image || "",
     };
   });
 }

@@ -1,17 +1,20 @@
 import { createAuthClient } from "better-auth/react";
-import { DEFAULT_LOGIN_REDIRECT } from "./config";
+import { DEFAULT_LOGIN_REDIRECT } from "@/lib/config";
+import { adminClient } from "better-auth/client/plugins";
 
-export const { signIn, signUp, signOut, useSession } = createAuthClient();
+export const authClient = createAuthClient({
+  plugins: [adminClient()],
+});
 
 export const signInWithGithub = async () => {
-  await signIn.social({
+  await authClient.signIn.social({
     provider: "github",
     callbackURL: DEFAULT_LOGIN_REDIRECT,
   });
 };
 
 export const signInWithGoogle = async () => {
-  await signIn.social({
+  await authClient.signIn.social({
     provider: "google",
     callbackURL: DEFAULT_LOGIN_REDIRECT,
   });

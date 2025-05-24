@@ -1,14 +1,5 @@
 "use client";
-import {
-  CheckCircle,
-  XCircle,
-  Mail,
-  MoreHorizontal,
-  Ban,
-  Check,
-  UserCog,
-  Trash2,
-} from "lucide-react";
+import { CheckCircle, XCircle, Mail, Ban, Check } from "lucide-react";
 import { format } from "date-fns";
 
 import {
@@ -19,19 +10,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { UserWithDetails } from "@/utils/users";
 import { GithubIcon, GoogleIcon } from "../ui/icons";
+import { UserActions } from "./user-actions";
 
 interface UsersTableProps {
   users: UserWithDetails[];
@@ -52,32 +41,38 @@ const getAccountIcon = (account: string) => {
 };
 
 export function UsersTable({ users }: UsersTableProps) {
+  // Handler functions for user actions
+  const handleEditUser = (user: UserWithDetails) => {
+    console.log("Edit user:", user.id);
+    // Add actual edit user implementation here
+  };
+
   return (
     <div className="overflow-hidden">
       <Table className="text-sm">
         <TableHeader>
           <TableRow>
-            <TableHead className="px-4 py-3 text-xs font-medium text-muted-foreground">
-              Name
-            </TableHead>
-            <TableHead className="px-4 py-3 text-xs font-medium text-muted-foreground">
-              Verification
-            </TableHead>
-            <TableHead className="px-4 py-3 text-xs font-medium text-muted-foreground">
-              Linked Accounts
-            </TableHead>
-            <TableHead className="px-4 py-3 text-xs font-medium text-muted-foreground">
-              Ban Status
-            </TableHead>
-            <TableHead className="px-4 py-3 text-xs font-medium text-muted-foreground">
-              Last Sign In
-            </TableHead>
-            <TableHead className="px-4 py-3 text-xs font-medium text-muted-foreground">
-              Created At
-            </TableHead>
-            <TableHead className="w-[80px] px-4 py-3 text-xs font-medium text-muted-foreground">
-              Actions
-            </TableHead>
+            {[
+              { label: "Name" },
+              { label: "Verification" },
+              { label: "Linked Accounts" },
+              { label: "Status" },
+              { label: "Last Sign In" },
+              { label: "Created At" },
+              { label: "Actions", className: "w-[80px]" },
+            ].map((col) => (
+              <TableHead
+                key={col.label}
+                className={[
+                  col.className,
+                  "px-4 py-3 text-xs font-medium text-muted-foreground",
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
+              >
+                {col.label}
+              </TableHead>
+            ))}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -86,10 +81,7 @@ export function UsersTable({ users }: UsersTableProps) {
               <TableCell className="px-4 py-3">
                 <div className="flex items-center gap-4">
                   <Avatar>
-                    <AvatarImage
-                      src={user.avatarUrl || "/placeholder.svg"}
-                      alt={user.name}
-                    />
+                    <AvatarImage src={user.avatarUrl} alt={user.name} />
                     <AvatarFallback className="text-xs">
                       {user.name.substring(0, 2).toUpperCase()}
                     </AvatarFallback>
@@ -139,18 +131,22 @@ export function UsersTable({ users }: UsersTableProps) {
               <TableCell className="px-4 py-3">
                 {user.banned ? (
                   <div className="flex flex-col gap-1">
-                    <Badge
-                      variant="destructive"
-                      className="flex items-center gap-1 px-2 py-1 text-xs"
-                    >
-                      <Ban className="h-3 w-3" />
-                      Banned
-                    </Badge>
-                    {user.banReason && (
-                      <span className="text-xs text-muted-foreground italic">
-                        Reason: {user.banReason}
-                      </span>
-                    )}
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="destructive"
+                          className="flex items-center gap-1 px-2 py-1 text-xs cursor-help"
+                        >
+                          <Ban className="h-3 w-3" />
+                          Banned
+                        </Badge>
+                      </TooltipTrigger>
+                      {user.banReason && (
+                        <TooltipContent>
+                          Reason: {user.banReason}
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
                     {user.banExpires && (
                       <span className="text-xs text-muted-foreground">
                         Expires: {format(user.banExpires, "MMM d, yyyy")}
@@ -176,39 +172,7 @@ export function UsersTable({ users }: UsersTableProps) {
                 {format(user.createdAt, "MMM d, yyyy 'at' h:mm a")}
               </TableCell>
               <TableCell className="px-4 py-3">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <span className="sr-only">Open menu</span>
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="text-sm">
-                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-                      Actions
-                    </DropdownMenuLabel>
-                    <DropdownMenuItem className="text-xs">
-                      <UserCog className="mr-2 h-4 w-4" />
-                      <span>Edit User</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />{" "}
-                    {user.banned ? (
-                      <DropdownMenuItem className="text-xs">
-                        <Ban className="mr-2 h-4 w-4" />
-                        <span>Unban User</span>
-                      </DropdownMenuItem>
-                    ) : (
-                      <DropdownMenuItem className="text-xs">
-                        <Ban className="mr-2 h-4 w-4" />
-                        <span>Ban User</span>
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem className="text-xs text-destructive focus:text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Delete User</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <UserActions user={user} onEdit={handleEditUser} />
               </TableCell>
             </TableRow>
           ))}
