@@ -19,7 +19,7 @@ import { UserDeleteDialog } from "./user-delete-dialog";
 interface UserActionsProps {
   user: UserWithDetails;
   onEdit?: (user: UserWithDetails) => void;
-  onActionComplete?: () => void;
+  onActionComplete: () => void;
 }
 
 export function UserActions({
@@ -32,14 +32,10 @@ export function UserActions({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  // Handlers for dialog actions
   const handleDialogClose = (
     setter: React.Dispatch<React.SetStateAction<boolean>>,
   ) => {
     setter(false);
-    if (onActionComplete) {
-      onActionComplete();
-    }
   };
 
   return (
@@ -106,19 +102,28 @@ export function UserActions({
       <UserBanDialog
         user={user}
         isOpen={showBanDialog}
-        onClose={() => handleDialogClose(setShowBanDialog)}
+        onClose={() => {
+          handleDialogClose(setShowBanDialog);
+          onActionComplete();
+        }}
       />
 
       <UserUnbanDialog
         user={user}
         isOpen={showUnbanDialog}
-        onClose={() => handleDialogClose(setShowUnbanDialog)}
+        onClose={() => {
+          handleDialogClose(setShowUnbanDialog);
+          onActionComplete();
+        }}
       />
 
       <UserDeleteDialog
         user={user}
         isOpen={showDeleteDialog}
-        onClose={() => handleDialogClose(setShowDeleteDialog)}
+        onClose={() => {
+          handleDialogClose(setShowDeleteDialog);
+          onActionComplete();
+        }}
       />
     </>
   );
