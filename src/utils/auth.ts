@@ -42,6 +42,18 @@ export async function deleteUser(userId: string) {
   return res;
 }
 
+export async function revokeUserSessions(userId: string) {
+  const res = await authClient.admin.revokeUserSessions({
+    userId,
+  });
+
+  if (res?.error) {
+    throw new Error(res.error.message || "Failed to revoke user sessions");
+  }
+
+  return res;
+}
+
 export async function createUser(data: {
   name: string;
   email: string;

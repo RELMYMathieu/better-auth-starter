@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, MoreHorizontal, Trash2, UserCog } from "lucide-react";
+import { Ban, MoreHorizontal, Trash2, UserCog, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,6 +15,7 @@ import { UserWithDetails } from "@/utils/users";
 import { UserBanDialog } from "./user-ban-dialog";
 import { UserUnbanDialog } from "./user-unban-dialog";
 import { UserDeleteDialog } from "./user-delete-dialog";
+import { UserRevokeSessionsDialog } from "./user-revoke-sessions-dialog";
 
 interface UserActionsProps {
   user: UserWithDetails;
@@ -30,6 +31,8 @@ export function UserActions({
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [showUnbanDialog, setShowUnbanDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showRevokeSessionsDialog, setShowRevokeSessionsDialog] =
+    useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleDialogClose = (
@@ -95,6 +98,16 @@ export function UserActions({
             <Trash2 className="mr-2 h-4 w-4" />
             <span>Delete User</span>
           </DropdownMenuItem>
+          <DropdownMenuItem
+            className="text-xs"
+            onClick={() => {
+              setDropdownOpen(false);
+              setShowRevokeSessionsDialog(true);
+            }}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Revoke All Sessions</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -122,6 +135,15 @@ export function UserActions({
         isOpen={showDeleteDialog}
         onClose={() => {
           handleDialogClose(setShowDeleteDialog);
+          onActionComplete();
+        }}
+      />
+
+      <UserRevokeSessionsDialog
+        user={user}
+        isOpen={showRevokeSessionsDialog}
+        onClose={() => {
+          handleDialogClose(setShowRevokeSessionsDialog);
           onActionComplete();
         }}
       />
