@@ -1,16 +1,9 @@
 "use client";
-import {
-  CheckCircle,
-  XCircle,
-  Mail,
-  Ban,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { CheckCircle, XCircle, Mail, Ban, Check } from "lucide-react";
 import { format } from "date-fns";
 import useSWR from "swr";
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   Table,
@@ -25,7 +18,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { Badge } from "@/components/ui/badge";
@@ -33,13 +25,26 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserWithDetails } from "@/utils/users";
 import { GithubIcon, GoogleIcon } from "../ui/icons";
 import { UserActions } from "./user-actions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationPrevious,
+  PaginationNext,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
+import { UserAddDialog } from "./user-add-dialog";
 
 // Fetcher function for SWR
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
-interface UsersTableProps {
-  initialUsers?: UserWithDetails[];
-}
 
 // Helper function to render account icons
 const getAccountIcon = (account: string) => {
@@ -55,27 +60,41 @@ const getAccountIcon = (account: string) => {
   }
 };
 
-export function UsersTable({ initialUsers }: UsersTableProps) {
-  const [page, setPage] = useState(1);
+export function UsersTable() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+
+  // Filters and sort state, initialized from URL
+  const [role, setRole] = useState(searchParams.get("role") || "all");
+  const [status, setStatus] = useState(searchParams.get("status") || "all");
+  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const limit = 10;
 
-  const { data, error, mutate, isLoading } = useSWR(
-    `/api/admin/users?page=${page}&limit=${limit}`,
-    fetcher,
-    {
-      fallbackData: initialUsers
-        ? {
-            users: initialUsers,
-            total: initialUsers.length,
-            page: 1,
-            limit,
-            totalPages: Math.ceil(initialUsers.length / limit),
-          }
-        : undefined,
-      revalidateOnFocus: false, // Disable revalidation on window focus
-      dedupingInterval: 2000, // Dedupe requests within 2 seconds
-    },
-  );
+  // Update URL when filters/sort/page change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (role && role !== "all") params.set("role", role);
+    if (status && status !== "all") params.set("status", status);
+    if (page) params.set("page", String(page));
+    params.set("limit", String(limit));
+    router.replace(`?${params.toString()}`);
+  }, [role, status, page, router]);
+
+  // Build SWR key with all params
+  const swrKey = useMemo(() => {
+    const params = new URLSearchParams();
+    if (role && role !== "all") params.set("role", role);
+    if (status && status !== "all") params.set("status", status);
+    params.set("page", String(page));
+    params.set("limit", String(limit));
+    return `/api/admin/users?${params.toString()}`;
+  }, [role, status, page, limit]);
+
+  const { data, error, mutate, isLoading } = useSWR(swrKey, fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 2000,
+  });
 
   // Handler functions for user actions
   const handleEditUser = (user: UserWithDetails) => {
@@ -84,14 +103,70 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
   };
 
   const handleActionComplete = () => {
-    // Immediately mutate the data to show loading state
     mutate();
   };
+
+  // Filter and sort controls
+  const filterControls = (
+    <div className="flex flex-wrap gap-2 items-end mb-2 w-full justify-between">
+      <div className="flex gap-2">
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">
+            Role
+          </label>
+          <Select
+            value={role}
+            onValueChange={(v) => {
+              setRole(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Roles</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+              <SelectItem value="user">User</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">
+            Status
+          </label>
+          <Select
+            value={status}
+            onValueChange={(v) => {
+              setStatus(v);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="All" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="banned">Banned</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      <button
+        className="ml-auto bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium shadow-xs hover:bg-primary/90 transition-colors"
+        onClick={() => setIsAddDialogOpen(true)}
+      >
+        Add a user
+      </button>
+    </div>
+  );
 
   if (error) return <div>Failed to load users</div>;
   if (!data)
     return (
-      <div className="space-y-4">
+      <div className="space-y-4 border-accent-foreground">
+        {filterControls}
         <div className="overflow-hidden">
           <Table className="text-sm">
             <TableHeader>
@@ -163,11 +238,83 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
 
   const { users, total, totalPages } = data;
 
+  // Pagination logic for shadcn/ui Pagination
+  const renderPagination = () => {
+    if (totalPages <= 1) return null;
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, page - 2);
+    let endPage = Math.min(totalPages, page + 2);
+    if (endPage - startPage < maxPagesToShow - 1) {
+      if (startPage === 1) {
+        endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+      } else if (endPage === totalPages) {
+        startPage = Math.max(1, endPage - maxPagesToShow + 1);
+      }
+    }
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    return (
+      <Pagination>
+        <PaginationContent>
+          <PaginationItem>
+            <PaginationPrevious
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              aria-disabled={page === 1}
+              tabIndex={page === 1 ? -1 : 0}
+              className={page === 1 ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+          {startPage > 1 && (
+            <>
+              <PaginationItem>
+                <PaginationLink onClick={() => setPage(1)}>1</PaginationLink>
+              </PaginationItem>
+              {startPage > 2 && <PaginationEllipsis />}
+            </>
+          )}
+          {pageNumbers.map((pNum) => (
+            <PaginationItem key={pNum}>
+              <PaginationLink
+                isActive={pNum === page}
+                onClick={() => setPage(pNum)}
+              >
+                {pNum}
+              </PaginationLink>
+            </PaginationItem>
+          ))}
+          {endPage < totalPages && (
+            <>
+              {endPage < totalPages - 1 && <PaginationEllipsis />}
+              <PaginationItem>
+                <PaginationLink onClick={() => setPage(totalPages)}>
+                  {totalPages}
+                </PaginationLink>
+              </PaginationItem>
+            </>
+          )}
+          <PaginationItem>
+            <PaginationNext
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              aria-disabled={page === totalPages}
+              tabIndex={page === totalPages ? -1 : 0}
+              className={
+                page === totalPages ? "pointer-events-none opacity-50" : ""
+              }
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+    );
+  };
+
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden">
-        <Table className="text-sm">
-          <TableHeader>
+      {filterControls}
+      <div className="overflow-hidden rounded-lg border-muted border-2 ">
+        <Table className="text-sm ">
+          <TableHeader className="bg-muted sticky top-0 z-10">
             <TableRow>
               {[
                 { label: "Name" },
@@ -338,34 +485,17 @@ export function UsersTable({ initialUsers }: UsersTableProps) {
           </TableBody>
         </Table>
       </div>
-
-      {/* Pagination Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between px-4 py-1">
         <div className="text-sm text-muted-foreground">
           Showing {users.length} of {total} users
         </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-            disabled={page === 1 || isLoading}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <div className="text-sm">
-            Page {page} of {totalPages}
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-            disabled={page === totalPages || isLoading}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+        {renderPagination()}
       </div>
+      <UserAddDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSuccess={() => mutate()}
+      />
     </div>
   );
 }

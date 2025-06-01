@@ -16,17 +16,66 @@ export interface UserWithDetails {
   avatarUrl: string;
 }
 
-export async function getUsers(): Promise<UserWithDetails[]> {
-  // Get all users (protected by auth for only admin access)
+export interface GetUsersOptions {
+  limit?: number;
+  offset?: number;
+  sortBy?: string;
+  sortDirection?: "asc" | "desc";
+  role?: string;
+  status?: string;
+  email?: string;
+  name?: string;
+}
+
+export async function getUsers(
+  options: GetUsersOptions = {},
+): Promise<{ users: UserWithDetails[]; total: number }> {
+  // Build query for Better Auth
+  const query: Record<string, any> = {
+    limit: options.limit ?? 10,
+    offset: options.offset ?? 0,
+  };
+
+  // Sorting
+  if (options.sortBy) query.sortBy = options.sortBy;
+  if (options.sortDirection) query.sortDirection = options.sortDirection;
+
+  // Filtering by role
+  if (options.role) {
+    query.filterField = "role";
+    query.filterOperator = "eq";
+    query.filterValue = options.role;
+  }
+
+  // Filtering by status (active/banned)
+  if (options.status) {
+    query.filterField = "banned";
+    query.filterOperator = "eq";
+    query.filterValue = options.status === "banned" ? true : false;
+  }
+
+  // Filtering by email
+  if (options.email) {
+    query.searchField = "email";
+    query.searchOperator = "contains";
+    query.searchValue = options.email;
+  }
+
+  // Filtering by name
+  if (options.name) {
+    query.searchField = "name";
+    query.searchOperator = "contains";
+    query.searchValue = options.name;
+  }
+
+  // Get users from Better Auth
   const result = await auth.api.listUsers({
     headers: await headers(),
-    query: {
-      limit: 100,
-    },
+    query,
   });
 
   if (!result.users) {
-    return [];
+    return { users: [], total: 0 };
   }
 
   // Query separate tables to get accounts information
@@ -70,16 +119,11 @@ export async function getUsers(): Promise<UserWithDetails[]> {
   );
 
   // Transform the raw data into the format expected by the UsersTable component
-  return result.users.map((user) => {
+  const users: UserWithDetails[] = result.users.map((user) => {
     const accounts = accountsByUser[user.id] || [];
-
-    // If the banned field is null or undefined, default to false
     const banned = user.banned ?? false;
-
-    // Get ban reason and expiry information if available
     const banReason = user.banReason || "";
     const banExpires = user.banExpires || null;
-
     return {
       id: user.id,
       name: user.name,
@@ -94,4 +138,6 @@ export async function getUsers(): Promise<UserWithDetails[]> {
       avatarUrl: user.image || "",
     };
   });
+
+  return { users, total: result.total ?? users.length };
 }

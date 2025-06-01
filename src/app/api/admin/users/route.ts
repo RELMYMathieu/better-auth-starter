@@ -7,18 +7,34 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
     const offset = (page - 1) * limit;
+    const sortBy = searchParams.get("sortBy") || undefined;
+    let sortDirection = searchParams.get("sortDirection") || undefined;
+    if (sortDirection !== "asc" && sortDirection !== "desc") {
+      sortDirection = undefined;
+    }
+    const role = searchParams.get("role") || undefined;
+    const status = searchParams.get("status") || undefined;
+    const email = searchParams.get("email") || undefined;
+    const name = searchParams.get("name") || undefined;
 
-    const users = await getUsers();
-
-    // Apply pagination
-    const paginatedUsers = users.slice(offset, offset + limit);
+    // Pass all filters and sort to getUsers
+    const { users, total } = await getUsers({
+      limit,
+      offset,
+      sortBy,
+      sortDirection,
+      role,
+      status,
+      email,
+      name,
+    });
 
     return NextResponse.json({
-      users: paginatedUsers,
-      total: users.length,
+      users,
+      total,
       page,
       limit,
-      totalPages: Math.ceil(users.length / limit),
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error("Error fetching users:", error);

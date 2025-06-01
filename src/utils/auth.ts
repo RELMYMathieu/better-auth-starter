@@ -41,3 +41,44 @@ export async function deleteUser(userId: string) {
 
   return res;
 }
+
+export async function createUser(data: {
+  name: string;
+  email: string;
+  password: string;
+  role?: "user" | "admin" | ("user" | "admin")[];
+  data?: Record<string, any>;
+  autoVerify?: boolean;
+}) {
+  const { autoVerify, ...userData } = data;
+
+  // If autoVerify is true, add emailVerified to data
+  const createData = {
+    ...userData,
+    data: {
+      ...userData.data,
+      ...(autoVerify ? { emailVerified: true } : {}),
+    },
+  };
+
+  const res = await authClient.admin.createUser(createData);
+
+  if (res?.error) {
+    throw new Error(res.error.message || "Failed to create user");
+  }
+
+  // If not auto-verified, send verification email
+  if (!autoVerify) {
+    try {
+      await authClient.sendVerificationEmail({
+        email: data.email,
+        callbackURL: "/dashboard",
+      });
+    } catch (error) {
+      console.error("Failed to send verification email:", error);
+      // Don't throw here as user was created successfully
+    }
+  }
+
+  return res;
+}
