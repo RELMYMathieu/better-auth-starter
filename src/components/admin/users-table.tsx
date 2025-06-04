@@ -1,5 +1,16 @@
 "use client";
-import { CheckCircle, XCircle, Mail, Ban, Check } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Mail,
+  Ban,
+  Check,
+  Search,
+  Users,
+  Shield,
+  User,
+  UserPlus,
+} from "lucide-react";
 import { format } from "date-fns";
 import useSWR from "swr";
 import { useState, useEffect, useMemo } from "react";
@@ -30,7 +41,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import {
   Pagination,
@@ -67,29 +77,39 @@ export function UsersTable() {
 
   // Filters and sort state, initialized from URL
   const [role, setRole] = useState(searchParams.get("role") || "all");
-  const [status, setStatus] = useState(searchParams.get("status") || "all");
+  const [email, setEmail] = useState(searchParams.get("email") || "");
+  const [debouncedEmail, setDebouncedEmail] = useState(email);
   const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
   const limit = 10;
+
+  // Debounce email search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedEmail(email);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [email]);
 
   // Update URL when filters/sort/page change
   useEffect(() => {
     const params = new URLSearchParams();
     if (role && role !== "all") params.set("role", role);
-    if (status && status !== "all") params.set("status", status);
+    if (debouncedEmail) params.set("email", debouncedEmail);
     if (page) params.set("page", String(page));
     params.set("limit", String(limit));
     router.replace(`?${params.toString()}`);
-  }, [role, status, page, router]);
+  }, [role, debouncedEmail, page, router]);
 
   // Build SWR key with all params
   const swrKey = useMemo(() => {
     const params = new URLSearchParams();
     if (role && role !== "all") params.set("role", role);
-    if (status && status !== "all") params.set("status", status);
+    if (debouncedEmail) params.set("email", debouncedEmail);
     params.set("page", String(page));
     params.set("limit", String(limit));
     return `/api/admin/users?${params.toString()}`;
-  }, [role, status, page, limit]);
+  }, [role, debouncedEmail, page, limit]);
 
   const { data, error, mutate, isLoading } = useSWR(swrKey, fetcher, {
     revalidateOnFocus: false,
@@ -109,54 +129,70 @@ export function UsersTable() {
   // Filter and sort controls
   const filterControls = (
     <div className="flex flex-wrap gap-2 items-end mb-2 w-full justify-between">
-      <div className="flex gap-2">
-        <div>
-          <label className="block text-xs text-muted-foreground mb-1">
-            Role
-          </label>
-          <Select
-            value={role}
-            onValueChange={(v) => {
-              setRole(v);
+      <div className="flex gap-2 items-end">
+        {/* Search by email */}
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search email..."
+            className="pl-8 pr-2 py-2 border rounded-md text-sm bg-background w-[200px]"
+            value={email}
+            onChange={(e) => {
+              setEmail(e.target.value);
               setPage(1);
             }}
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="user">User</SelectItem>
-            </SelectContent>
-          </Select>
+          />
         </div>
-        <div>
-          <label className="block text-xs text-muted-foreground mb-1">
-            Status
-          </label>
-          <Select
-            value={status}
-            onValueChange={(v) => {
-              setStatus(v);
-              setPage(1);
-            }}
-          >
-            <SelectTrigger className="w-[120px]">
-              <SelectValue placeholder="All" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Users</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="banned">Banned</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {/* Role select with icon */}
+        <Select
+          value={role}
+          onValueChange={(v) => {
+            setRole(v);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[140px] flex items-center gap-2">
+            <span className="flex items-center gap-2">
+              {role === "all" ? (
+                <Users className="w-4 h-4" />
+              ) : role === "admin" ? (
+                <Shield className="w-4 h-4" />
+              ) : (
+                <User className="w-4 h-4" />
+              )}
+              {role === "all"
+                ? "All Roles"
+                : role.charAt(0).toUpperCase() + role.slice(1)}
+            </span>
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">
+              <span className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                All Roles
+              </span>
+            </SelectItem>
+            <SelectItem value="admin">
+              <span className="flex items-center gap-2">
+                <Shield className="w-4 h-4" />
+                Admin
+              </span>
+            </SelectItem>
+            <SelectItem value="user">
+              <span className="flex items-center gap-2">
+                <User className="w-4 h-4" />
+                User
+              </span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
       <button
-        className="ml-auto bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium shadow-xs hover:bg-primary/90 transition-colors"
+        className="ml-auto bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-medium shadow-xs hover:bg-primary/90 transition-colors flex items-center gap-2"
         onClick={() => setIsAddDialogOpen(true)}
       >
+        <UserPlus className="h-4 w-4" />
         Add a user
       </button>
     </div>
@@ -402,7 +438,7 @@ export function UsersTable() {
                       {user.verified ? (
                         <Badge
                           variant="outline"
-                          className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1 px-2 py-1 text-xs"
+                          className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700 flex items-center gap-1 px-2 py-1 text-xs"
                         >
                           <CheckCircle className="h-3 w-3" />
                           Verified
@@ -410,7 +446,7 @@ export function UsersTable() {
                       ) : (
                         <Badge
                           variant="outline"
-                          className="bg-yellow-50 text-yellow-700 border-yellow-200 flex items-center gap-1 px-2 py-1 text-xs"
+                          className="bg-yellow-50 text-yellow-700 border-yellow-200 dark:bg-yellow-900 dark:text-yellow-200 dark:border-yellow-700 flex items-center gap-1 px-2 py-1 text-xs"
                         >
                           <XCircle className="h-3 w-3" />
                           Unverified
@@ -422,7 +458,7 @@ export function UsersTable() {
                         {user.accounts.map((account) => (
                           <div
                             key={account}
-                            className="rounded-full bg-muted p-1.5 text-muted-foreground"
+                            className="rounded-full bg-muted p-1.5 text-muted-foreground dark:text-neutral-200"
                             title={account}
                           >
                             {getAccountIcon(account)}
@@ -458,7 +494,7 @@ export function UsersTable() {
                       ) : (
                         <Badge
                           variant="outline"
-                          className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1 px-2 py-1 text-xs"
+                          className="bg-green-50 text-green-700 border-green-200 dark:bg-green-900 dark:text-green-200 dark:border-green-700 flex items-center gap-1 px-2 py-1 text-xs"
                         >
                           <Check className="h-3 w-3" />
                           Active
