@@ -211,6 +211,7 @@ export function UsersTable() {
                   { label: "Name" },
                   { label: "Verification" },
                   { label: "Linked Accounts" },
+                  { label: "Role" },
                   { label: "Status" },
                   { label: "Last Sign In" },
                   { label: "Created At" },
@@ -356,6 +357,7 @@ export function UsersTable() {
                 { label: "Name" },
                 { label: "Verification" },
                 { label: "Linked Accounts" },
+                { label: "Role" },
                 { label: "Status" },
                 { label: "Last Sign In" },
                 { label: "Created At" },
@@ -465,6 +467,26 @@ export function UsersTable() {
                           </div>
                         ))}
                       </div>
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
+                      <Badge
+                        variant="outline"
+                        className={`flex items-center gap-1 px-2 py-1 text-xs ${
+                          user.role === "admin"
+                            ? "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900 dark:text-purple-200 dark:border-purple-700"
+                            : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700"
+                        }`}
+                      >
+                        {user.role === "admin" ? (
+                          <Shield className="h-3 w-3" />
+                        ) : (
+                          <User className="h-3 w-3" />
+                        )}
+                        {user.role
+                          ? user.role.charAt(0).toUpperCase() +
+                            user.role.slice(1)
+                          : "User"}
+                      </Badge>
                     </TableCell>
                     <TableCell className="px-4 py-3">
                       {user.banned ? (

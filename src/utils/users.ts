@@ -14,6 +14,7 @@ export interface UserWithDetails {
   lastSignIn: Date | null;
   createdAt: Date;
   avatarUrl: string;
+  role?: string;
 }
 
 export interface GetUsersOptions {
@@ -129,6 +130,7 @@ export async function getUsers(
       name: user.name,
       email: user.email,
       verified: user.emailVerified,
+      role: user.role,
       banned,
       banReason,
       banExpires,

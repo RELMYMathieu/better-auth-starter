@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Ban, MoreHorizontal, Trash2, UserCog, LogOut } from "lucide-react";
+import { Ban, MoreHorizontal, Trash2, Shield, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,23 +16,20 @@ import { UserBanDialog } from "./user-ban-dialog";
 import { UserUnbanDialog } from "./user-unban-dialog";
 import { UserDeleteDialog } from "./user-delete-dialog";
 import { UserRevokeSessionsDialog } from "./user-revoke-sessions-dialog";
+import { UserRoleDialog } from "./user-role-dialog";
 
 interface UserActionsProps {
   user: UserWithDetails;
-  onEdit?: (user: UserWithDetails) => void;
   onActionComplete: () => void;
 }
 
-export function UserActions({
-  user,
-  onEdit,
-  onActionComplete,
-}: UserActionsProps) {
+export function UserActions({ user, onActionComplete }: UserActionsProps) {
   const [showBanDialog, setShowBanDialog] = useState(false);
   const [showUnbanDialog, setShowUnbanDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showRevokeSessionsDialog, setShowRevokeSessionsDialog] =
     useState(false);
+  const [showRoleDialog, setShowRoleDialog] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const handleDialogClose = (
@@ -58,11 +55,11 @@ export function UserActions({
             className="text-xs"
             onClick={() => {
               setDropdownOpen(false);
-              if (onEdit) onEdit(user);
+              setShowRoleDialog(true);
             }}
           >
-            <UserCog className="mr-2 h-4 w-4" />
-            <span>Edit User</span>
+            <Shield className="mr-2 h-4 w-4" />
+            <span>Update Role</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           {user.banned ? (
@@ -144,6 +141,15 @@ export function UserActions({
         isOpen={showRevokeSessionsDialog}
         onClose={() => {
           handleDialogClose(setShowRevokeSessionsDialog);
+          onActionComplete();
+        }}
+      />
+
+      <UserRoleDialog
+        user={user}
+        isOpen={showRoleDialog}
+        onClose={() => {
+          handleDialogClose(setShowRoleDialog);
           onActionComplete();
         }}
       />

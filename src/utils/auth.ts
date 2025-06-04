@@ -94,3 +94,16 @@ export async function createUser(data: {
 
   return res;
 }
+
+export async function updateUserRole(userId: string, role: string) {
+  const res = await authClient.admin.setRole({
+    userId,
+    role: role as "user" | "admin" | ("user" | "admin")[],
+  });
+
+  if (res?.error) {
+    throw new Error(res.error.message || "Failed to update user role");
+  }
+
+  return res;
+}
