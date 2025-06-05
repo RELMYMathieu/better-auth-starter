@@ -60,11 +60,11 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json());
 const getAccountIcon = (account: string) => {
   switch (account) {
     case "credential":
-      return <Mail className="h-4 w-4" />;
+      return <Mail className="h-4 w-4 dark:text-neutral-300" />;
     case "github":
-      return <GithubIcon className="h-4 w-4 text-muted-foreground" />;
+      return <GithubIcon className="h-4 w-4 dark:text-neutral-300" />;
     case "google":
-      return <GoogleIcon className="h-4 w-4" />;
+      return <GoogleIcon className="h-4 w-4 dark:text-neutral-300" />;
     default:
       return null;
   }
@@ -115,12 +115,6 @@ export function UsersTable() {
     revalidateOnFocus: false,
     dedupingInterval: 2000,
   });
-
-  // Handler functions for user actions
-  const handleEditUser = (user: UserWithDetails) => {
-    console.log("Edit user:", user.id);
-    // Add actual edit user implementation here
-  };
 
   const handleActionComplete = () => {
     mutate();
@@ -460,7 +454,7 @@ export function UsersTable() {
                         {user.accounts.map((account) => (
                           <div
                             key={account}
-                            className="rounded-full bg-muted p-1.5 text-muted-foreground dark:text-neutral-200"
+                            className="rounded-full bg-muted p-1.5 text-muted-foreground dark:bg-neutral-700"
                             title={account}
                           >
                             {getAccountIcon(account)}
@@ -534,7 +528,6 @@ export function UsersTable() {
                     <TableCell className="px-4 py-3">
                       <UserActions
                         user={user}
-                        onEdit={handleEditUser}
                         onActionComplete={handleActionComplete}
                       />
                     </TableCell>

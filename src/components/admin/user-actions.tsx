@@ -86,7 +86,7 @@ export function UserActions({ user, onActionComplete }: UserActionsProps) {
             </DropdownMenuItem>
           )}
           <DropdownMenuItem
-            className="text-xs text-destructive focus:text-destructive"
+            className="text-xs"
             onClick={() => {
               setDropdownOpen(false);
               setShowDeleteDialog(true);
