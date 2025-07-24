@@ -1,12 +1,24 @@
 {
-  "name": "zexanext",
+  "name": "next-better-auth-starter",
   "version": "2.0.0",
+  "description": "A modern Next.js boilerplate with authentication, admin dashboard, and user management built with Better Auth, Drizzle ORM, and PostgreSQL",
   "private": true,
+  "author": "Zexa",
+  "license": "MIT",
+  "homepage": "https://zexa.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zexahq/better-auth-starter"
+  },
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -27,6 +39,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^16.5.0",
     "drizzle-orm": "^0.43.1",
+    "framer-motion": "^12.23.9",
     "lucide-react": "^0.511.0",
     "next": "^15.3.2",
     "pg": "^8.16.0",

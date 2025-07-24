@@ -9,7 +9,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "ZexaNext",
+  title: "Zexa Better Auth",
   description: "A Next.js boilerplate for building web applications",
 };
 

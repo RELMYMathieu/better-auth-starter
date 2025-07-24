@@ -1,7 +1,7 @@
-import React from "react";
+import { redirect } from "next/navigation";
 
-const AdminPage = () => {
-  return <div>AdminPage</div>;
+const AdminPage = async () => {
+  redirect("/admin/users");
 };
 
 export default AdminPage;
