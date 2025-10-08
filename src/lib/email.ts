@@ -9,7 +9,7 @@ export const sendEmail = async (payload: {
 }) => {
   try {
     const response = await resend.emails.send({
-      from: "Zexa Technologies <no-reply@zexa.app>",
+      from: "Unicol Administration <noreply@mail.unicol.me>",
       ...payload,
     });
 
