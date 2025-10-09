@@ -1,7 +1,9 @@
+"use client";
+
 import { useState } from "react";
 import useSWR from "swr";
 
-const format = (date, formatStr) => {
+const format = (date: Date | string) => {
   const d = new Date(date);
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const hours = d.getHours();
@@ -10,6 +12,7 @@ const format = (date, formatStr) => {
   const hour12 = hours % 12 || 12;
   return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} ${hour12}:${minutes.toString().padStart(2, "0")} ${ampm}`;
 };
+
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -24,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Copy, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 const EXPIRATION_OPTIONS = [
   { label: "1 Hour", value: 1 },
@@ -34,11 +37,23 @@ const EXPIRATION_OPTIONS = [
   { label: "30 Days", value: 720 },
 ];
 
+interface SessionCode {
+  id: string;
+  code: string;
+  createdAt: string;
+  expiresAt: string;
+  used: boolean;
+  usedAt: string | null;
+  createdBy?: {
+    name: string;
+  };
+}
+
 export default function SessionCodesPage() {
   const [expiresInHours, setExpiresInHours] = useState("24");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const { data: codes, mutate } = useSWR("/api/admin/session-codes", fetcher, {
+  const { data: codes, mutate } = useSWR<SessionCode[]>("/api/admin/session-codes", fetcher, {
     refreshInterval: 5000,
   });
 
@@ -56,19 +71,19 @@ export default function SessionCodesPage() {
       const newCode = await response.json();
       toast.success(`Code generated: ${newCode.code}`);
       mutate();
-    } catch (error) {
+    } catch {
       toast.error("Failed to generate code");
     } finally {
       setIsGenerating(false);
     }
   };
 
-  const copyCode = (code) => {
+  const copyCode = (code: string) => {
     navigator.clipboard.writeText(code);
     toast.success("Code copied!");
   };
 
-  const getStatus = (code) => {
+  const getStatus = (code: SessionCode) => {
     if (code.used) return "used";
     if (new Date() > new Date(code.expiresAt)) return "expired";
     return "active";
@@ -145,13 +160,13 @@ export default function SessionCodesPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        {format(new Date(code.createdAt))}
+                        {format(code.createdAt)}
                       </td>
                       <td className="px-4 py-3">
-                        {format(new Date(code.expiresAt))}
+                        {format(code.expiresAt)}
                       </td>
                       <td className="px-4 py-3">
-                        {code.usedAt ? format(new Date(code.usedAt)) : "-"}
+                        {code.usedAt ? format(code.usedAt) : "-"}
                       </td>
                       <td className="px-4 py-3">{code.createdBy?.name || "-"}</td>
                       <td className="px-4 py-3">

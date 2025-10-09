@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +30,7 @@ export default function GuestLoginPage() {
       }
 
       window.location.href = "/dashboard";
-    } catch (err) {
+    } catch {
       setError("Something went wrong");
       setIsLoading(false);
     }
