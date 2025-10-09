@@ -27,7 +27,11 @@ export async function registerUser(
         password,
         name,
         callbackURL: DEFAULT_LOGIN_REDIRECT,
-      },
+        role: undefined,
+        banned: undefined,
+        banReason: undefined,
+        banExpires: undefined,
+      } as any,
     });
 
     return {
