@@ -96,12 +96,12 @@ export default function SessionCodesPage() {
           document.execCommand("copy");
           toast.success("Code copied!");
         } catch (err) {
-          toast.error("Failed to copy code");
+          toast.error("Failed to copy code" + (err as Error).message);
         }
         document.body.removeChild(textArea);
       }
     } catch (err) {
-      toast.error("Failed to copy code");
+      toast.error("Failed to copy code" + (err as Error).message);
     }
   };
 
