@@ -22,6 +22,13 @@
       "when": 1760030138146,
       "tag": "0002_broad_the_hand",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1760031492859,
+      "tag": "0003_wealthy_energizer",
+      "breakpoints": true
     }
   ]
 }

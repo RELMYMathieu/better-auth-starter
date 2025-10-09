@@ -1,0 +1,1 @@
+ALTER TABLE "session_code" ADD COLUMN "used_by_user_id" text;
