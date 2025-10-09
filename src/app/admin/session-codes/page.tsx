@@ -2,6 +2,18 @@
 
 import { useState } from "react";
 import useSWR from "swr";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Copy, Plus } from "lucide-react";
+import toast from "react-hot-toast";
 
 const format = (date: Date | string) => {
   const d = new Date(date);
@@ -12,20 +24,6 @@ const format = (date: Date | string) => {
   const hour12 = hours % 12 || 12;
   return `${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()} ${hour12}:${minutes.toString().padStart(2, "0")} ${ampm}`;
 };
-
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, Plus } from "lucide-react";
-import toast from "react-hot-toast";
 
 const fetcher = (url: string) => fetch(url).then((res) => {
   if (!res.ok) throw new Error('Failed to fetch');
@@ -81,9 +79,30 @@ export default function SessionCodesPage() {
     }
   };
 
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code);
-    toast.success("Code copied!");
+  const copyCode = async (code: string) => {
+    try {
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(code);
+        toast.success("Code copied!");
+      } else {
+        // Fallback for older browsers or non-HTTPS
+        const textArea = document.createElement("textarea");
+        textArea.value = code;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand("copy");
+          toast.success("Code copied!");
+        } catch (err) {
+          toast.error("Failed to copy code");
+        }
+        document.body.removeChild(textArea);
+      }
+    } catch (err) {
+      toast.error("Failed to copy code");
+    }
   };
 
   const getStatus = (code: SessionCode) => {

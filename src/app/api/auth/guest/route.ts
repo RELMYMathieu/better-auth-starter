@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { sessionCode, user, session } from "@/db/schema";
 import { eq } from "drizzle-orm";
-import { cookies } from "next/headers";
 
 export async function POST(request: NextRequest) {
   try {
@@ -73,8 +72,14 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(sessionCode.id, codeRecord.id));
 
-    const cookieStore = await cookies();
-    cookieStore.set("better-auth.session_token", sessionToken, {
+    // Create response and set cookie on it
+    const response = NextResponse.json({
+      success: true,
+      user: { id: guestUser.id, name: guestUser.name },
+    });
+
+    // Set the session cookie on the response
+    response.cookies.set("better-auth.session_token", sessionToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
@@ -82,10 +87,7 @@ export async function POST(request: NextRequest) {
       path: "/",
     });
 
-    return NextResponse.json({
-      success: true,
-      user: { id: guestUser.id, name: guestUser.name },
-    });
+    return response;
   } catch (error) {
     console.error("Error validating session code:", error);
     return NextResponse.json(

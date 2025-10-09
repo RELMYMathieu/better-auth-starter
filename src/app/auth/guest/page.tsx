@@ -29,6 +29,7 @@ export default function GuestLoginPage() {
         return;
       }
 
+      // Cookie is now properly set on the response, do a full page reload
       window.location.href = "/dashboard";
     } catch {
       setError("Something went wrong");
