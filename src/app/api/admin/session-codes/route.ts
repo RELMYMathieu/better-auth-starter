@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/db";
 import { sessionCode } from "@/db/schema";
-import { auth } from "@/lib/auth";
+import { auth, type Session } from "@/lib/auth";
 import { headers } from "next/headers";
 import { desc } from "drizzle-orm";
 
@@ -13,7 +13,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    }) as Session | null;
 
     if (!session || session.user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
@@ -57,7 +57,7 @@ export async function GET() {
   try {
     const session = await auth.api.getSession({
       headers: await headers(),
-    });
+    }) as Session | null;
 
     if (!session || session.user.role !== "admin") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });

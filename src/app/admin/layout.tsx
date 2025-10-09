@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, type Session } from "@/lib/auth";
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import DashboardLayout from "@/components/admin/dashboard-layout";
@@ -10,7 +10,7 @@ export default async function AdminLayout({
 }>) {
   const session = await auth.api.getSession({
     headers: await headers(),
-  });
+  }) as Session | null;
 
   if (!session || session.user.role !== "admin") {
     return notFound();

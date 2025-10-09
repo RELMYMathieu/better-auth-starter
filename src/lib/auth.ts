@@ -14,6 +14,30 @@ export const auth = betterAuth({
       user: schema.user,
     },
   }),
+  user: {
+    additionalFields: {
+      role: {
+        type: "string",
+        required: false,
+        input: false,
+      },
+      banned: {
+        type: "boolean",
+        required: false,
+        input: false,
+      },
+      banReason: {
+        type: "string",
+        required: false,
+        input: false,
+      },
+      banExpires: {
+        type: "date",
+        required: false,
+        input: false,
+      },
+    },
+  },
   account: {
     accountLinking: {
       enabled: true,
@@ -54,3 +78,5 @@ export const auth = betterAuth({
     }) as any,
   ],
 });
+
+export type Session = typeof auth.$Infer.Session;
