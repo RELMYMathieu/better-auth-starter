@@ -48,7 +48,15 @@ const RegisterPage = () => {
                 GitHub
               </Button>
             </div>
-            <div className="text-center text-sm mt-4">
+            <div className="text-center text-sm">
+              <Link
+                href="/auth/guest"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Have a guest code?
+              </Link>
+            </div>
+            <div className="text-center text-sm mt-2">
               Already have an account?{" "}
               <Link
                 href="/auth/login"
