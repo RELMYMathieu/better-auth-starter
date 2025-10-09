@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Copy, Plus } from "lucide-react";
+import { Copy, Plus, Trash2, XCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 const format = (date: Date | string) => {
@@ -85,7 +85,6 @@ export default function SessionCodesPage() {
         await navigator.clipboard.writeText(code);
         toast.success("Code copied!");
       } else {
-        // Fallback for older browsers or non-HTTPS
         const textArea = document.createElement("textarea");
         textArea.value = code;
         textArea.style.position = "fixed";
@@ -96,12 +95,46 @@ export default function SessionCodesPage() {
           document.execCommand("copy");
           toast.success("Code copied!");
         } catch (err) {
-          toast.error("Failed to copy code" + (err as Error).message);
+          toast.error("Failed to copy code" + err);
         }
         document.body.removeChild(textArea);
       }
-    } catch (err) {
-      toast.error("Failed to copy code" + (err as Error).message);
+    } catch {
+      toast.error("Failed to copy code");
+    }
+  };
+
+  const deleteCode = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this code?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/session-codes/${id}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) throw new Error("Failed to delete code");
+
+      toast.success("Code deleted");
+      mutate();
+    } catch {
+      toast.error("Failed to delete code");
+    }
+  };
+
+  const invalidateCode = async (id: string) => {
+    if (!confirm("Are you sure you want to invalidate this code?")) return;
+
+    try {
+      const response = await fetch(`/api/admin/session-codes/${id}`, {
+        method: "PATCH",
+      });
+
+      if (!response.ok) throw new Error("Failed to invalidate code");
+
+      toast.success("Code invalidated");
+      mutate();
+    } catch {
+      toast.error("Failed to invalidate code");
     }
   };
 
@@ -206,24 +239,38 @@ export default function SessionCodesPage() {
                             {status}
                           </Badge>
                         </td>
-                        <td className="px-4 py-3">
-                          {format(code.createdAt)}
-                        </td>
-                        <td className="px-4 py-3">
-                          {format(code.expiresAt)}
-                        </td>
+                        <td className="px-4 py-3">{format(code.createdAt)}</td>
+                        <td className="px-4 py-3">{format(code.expiresAt)}</td>
                         <td className="px-4 py-3">
                           {code.usedAt ? format(code.usedAt) : "-"}
                         </td>
                         <td className="px-4 py-3">{code.createdByUser?.name || "-"}</td>
                         <td className="px-4 py-3">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => copyCode(code.code)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => copyCode(code.code)}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                            {status === "active" && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => invalidateCode(code.id)}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deleteCode(code.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     );

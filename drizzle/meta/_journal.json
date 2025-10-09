@@ -29,6 +29,13 @@
       "when": 1760031492859,
       "tag": "0003_wealthy_energizer",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1760032151226,
+      "tag": "0004_wet_energizer",
+      "breakpoints": true
     }
   ]
 }
