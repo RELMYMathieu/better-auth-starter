@@ -3,6 +3,7 @@ import * as schema from "@/db/schema";
 import { sendEmail } from "@/lib/email";
 import { betterAuth } from "better-auth";
 import { admin } from "better-auth/plugins";
+import { anonymous } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 
@@ -76,6 +77,7 @@ export const auth = betterAuth({
       defaultRole: "user",
       adminRoles: ["admin"],
     }) as any,
+    anonymous(),
   ],
 });
 

@@ -1,12 +1,13 @@
 import { createAuthClient } from "better-auth/react";
 import { DEFAULT_LOGIN_REDIRECT } from "@/lib/config";
-import { adminClient, inferAdditionalFields } from "better-auth/client/plugins";
+import { adminClient, anonymousClient, inferAdditionalFields } from "better-auth/client/plugins";
 import type { auth } from "./auth";
 
 export const authClient = createAuthClient({
   plugins: [
     adminClient() as any,
     inferAdditionalFields<typeof auth>(),
+    anonymousClient(),
   ],
 });
 

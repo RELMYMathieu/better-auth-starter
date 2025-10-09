@@ -73,6 +73,7 @@ export const sessionCode = pgTable("session_code", {
   used: boolean("used").notNull().default(false),
   usedAt: timestamp("used_at"),
   usedBySessionId: text("used_by_session_id"),
+  usedByUserId: text("used_by_user_id"),
   createdAt: timestamp("created_at")
     .$defaultFn(() => new Date())
     .notNull(),

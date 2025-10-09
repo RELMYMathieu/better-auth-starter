@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { authClient } from "@/lib/auth-client";
 
 export default function GuestLoginPage() {
   const [code, setCode] = useState("");
@@ -15,24 +16,32 @@ export default function GuestLoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch("/api/auth/guest", {
+      const validateRes = await fetch("/api/auth/guest/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
       });
 
-      const data = await response.json();
+      const validateData = await validateRes.json();
 
-      if (!response.ok) {
-        setError(data.error || "Invalid code");
+      if (!validateRes.ok) {
+        setError(validateData.error || "Invalid code");
         setIsLoading(false);
         return;
       }
 
-      // Cookie is now properly set on the response, do a full page reload
+      await (authClient as any).signIn.anonymous();
+
+      await fetch("/api/auth/guest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ codeId: validateData.codeId }),
+      });
+
       window.location.href = "/dashboard";
-    } catch {
-      setError("Something went wrong");
+
+    } catch (err) {
+      setError("Something went wrong" + (err as Error).message);
       setIsLoading(false);
     }
   };
@@ -56,7 +65,6 @@ export default function GuestLoginPage() {
                 onChange={(e) => setCode(e.target.value.toUpperCase())}
                 maxLength={8}
                 className="font-mono text-lg text-center tracking-widest"
-                required
               />
             </div>
 
