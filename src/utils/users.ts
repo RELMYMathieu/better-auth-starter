@@ -28,49 +28,55 @@ export interface GetUsersOptions {
   name?: string;
 }
 
+interface BetterAuthUser {
+  id: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+  role?: string;
+  banned?: boolean;
+  banReason?: string;
+  banExpires?: Date | null;
+  image?: string;
+  createdAt: Date;
+}
+
 export async function getUsers(
   options: GetUsersOptions = {},
 ): Promise<{ users: UserWithDetails[]; total: number }> {
-  // Build query for Better Auth
   const query: Record<string, any> = {
     limit: options.limit ?? 10,
     offset: options.offset ?? 0,
   };
 
-  // Sorting
   if (options.sortBy) query.sortBy = options.sortBy;
   if (options.sortDirection) query.sortDirection = options.sortDirection;
 
-  // Filtering by role
   if (options.role) {
     query.filterField = "role";
     query.filterOperator = "eq";
     query.filterValue = options.role;
   }
 
-  // Filtering by status (active/banned)
   if (options.status) {
     query.filterField = "banned";
     query.filterOperator = "eq";
     query.filterValue = options.status === "banned" ? true : false;
   }
 
-  // Filtering by email
   if (options.email) {
     query.searchField = "email";
     query.searchOperator = "contains";
     query.searchValue = options.email;
   }
 
-  // Filtering by name
   if (options.name) {
     query.searchField = "name";
     query.searchOperator = "contains";
     query.searchValue = options.name;
   }
 
-  // Get users from Better Auth
-  const result = await auth.api.listUsers({
+  const result = await (auth.api as any).listUsers({
     headers: await headers(),
     query,
   });
@@ -79,7 +85,6 @@ export async function getUsers(
     return { users: [], total: 0 };
   }
 
-  // Query separate tables to get accounts information
   const accountsQuery = await db.query.account.findMany({
     columns: {
       userId: true,
@@ -87,7 +92,6 @@ export async function getUsers(
     },
   });
 
-  // Query session information
   const sessionsQuery = await db.query.session.findMany({
     columns: {
       userId: true,
@@ -96,7 +100,6 @@ export async function getUsers(
     orderBy: (session) => [session.createdAt],
   });
 
-  // Group accounts by user ID
   const accountsByUser = accountsQuery.reduce(
     (acc, account) => {
       if (!acc[account.userId]) {
@@ -108,7 +111,6 @@ export async function getUsers(
     {} as Record<string, string[]>,
   );
 
-  // Get last sign in date by user ID
   const lastSignInByUser = sessionsQuery.reduce(
     (acc, session) => {
       if (!acc[session.userId] || session.createdAt > acc[session.userId]) {
@@ -119,8 +121,7 @@ export async function getUsers(
     {} as Record<string, Date>,
   );
 
-  // Transform the raw data into the format expected by the UsersTable component
-  const users: UserWithDetails[] = result.users.map((user) => {
+  const users: UserWithDetails[] = result.users.map((user: BetterAuthUser) => {
     const accounts = accountsByUser[user.id] || [];
     const banned = user.banned ?? false;
     const banReason = user.banReason || "";

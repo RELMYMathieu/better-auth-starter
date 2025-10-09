@@ -1,13 +1,13 @@
 "use client";
 
 import React from "react";
-import { useForm, Controller } from "react-hook-form";
+import { useForm, Controller, ControllerRenderProps } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import PasswordInput from "./password-input";
-import { registerSchema } from "@/lib/schemas";
+import { registerSchema, RegisterSchema } from "@/lib/schemas";
 import { registerUser } from "@/app/auth/register/action";
 import { FormSuccess, FormError } from "../ui/form-messages";
 
@@ -22,12 +22,12 @@ const RegisterForm = () => {
     handleSubmit,
     formState: { errors, isSubmitting },
     control,
-  } = useForm({
+  } = useForm<RegisterSchema>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", password: "" },
   });
 
-  const onSubmit = async (data: import("../../lib/schemas").RegisterSchema) => {
+  const onSubmit = async (data: RegisterSchema) => {
     setFormState({});
     const result = await registerUser(data);
     if (result.success) {
@@ -75,7 +75,7 @@ const RegisterForm = () => {
         <Controller
           name="password"
           control={control}
-          render={({ field }) => (
+          render={({ field }: { field: ControllerRenderProps<RegisterSchema, "password"> }) => (
             <PasswordInput
               value={field.value}
               onChange={field.onChange}

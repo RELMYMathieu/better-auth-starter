@@ -1,11 +1,13 @@
 import { authClient } from "@/lib/auth-client";
 
+const adminAPI = (authClient as any).admin;
+
 export async function banUser(
   userId: string,
   banReason: string,
   banExpiresIn?: number,
 ) {
-  const res = await authClient.admin.banUser({
+  const res = await adminAPI.banUser({
     userId,
     banReason,
     banExpiresIn,
@@ -19,7 +21,7 @@ export async function banUser(
 }
 
 export async function unbanUser(userId: string) {
-  const res = await authClient.admin.unbanUser({
+  const res = await adminAPI.unbanUser({
     userId,
   });
 
@@ -31,7 +33,7 @@ export async function unbanUser(userId: string) {
 }
 
 export async function deleteUser(userId: string) {
-  const res = await authClient.admin.removeUser({
+  const res = await adminAPI.removeUser({
     userId,
   });
 
@@ -43,7 +45,7 @@ export async function deleteUser(userId: string) {
 }
 
 export async function revokeUserSessions(userId: string) {
-  const res = await authClient.admin.revokeUserSessions({
+  const res = await adminAPI.revokeUserSessions({
     userId,
   });
 
@@ -64,7 +66,6 @@ export async function createUser(data: {
 }) {
   const { autoVerify, ...userData } = data;
 
-  // If autoVerify is true, add emailVerified to data
   const createData = {
     ...userData,
     data: {
@@ -73,22 +74,20 @@ export async function createUser(data: {
     },
   };
 
-  const res = await authClient.admin.createUser(createData);
+  const res = await adminAPI.createUser(createData);
 
   if (res?.error) {
     throw new Error(res.error.message || "Failed to create user");
   }
 
-  // If not auto-verified, send verification email
   if (!autoVerify) {
     try {
-      await authClient.sendVerificationEmail({
+      await (authClient as any).sendVerificationEmail({
         email: data.email,
         callbackURL: "/dashboard",
       });
     } catch (error) {
       console.error("Failed to send verification email:", error);
-      // Don't throw here as user was created successfully
     }
   }
 
@@ -96,7 +95,7 @@ export async function createUser(data: {
 }
 
 export async function updateUserRole(userId: string, role: string) {
-  const res = await authClient.admin.setRole({
+  const res = await adminAPI.setRole({
     userId,
     role: role as "user" | "admin" | ("user" | "admin")[],
   });
