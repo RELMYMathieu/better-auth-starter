@@ -66,7 +66,7 @@ export async function GET() {
     const codes = await db.query.sessionCode.findMany({
       orderBy: [desc(sessionCode.createdAt)],
       with: {
-        createdBy: {
+        createdByUser: {
           columns: {
             name: true,
             email: true,

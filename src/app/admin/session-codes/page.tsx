@@ -27,7 +27,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Copy, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => {
+  if (!res.ok) throw new Error('Failed to fetch');
+  return res.json();
+});
 
 const EXPIRATION_OPTIONS = [
   { label: "1 Hour", value: 1 },
@@ -44,7 +47,7 @@ interface SessionCode {
   expiresAt: string;
   used: boolean;
   usedAt: string | null;
-  createdBy?: {
+  createdByUser?: {
     name: string;
   };
 }
@@ -53,7 +56,7 @@ export default function SessionCodesPage() {
   const [expiresInHours, setExpiresInHours] = useState("24");
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const { data: codes, mutate } = useSWR<SessionCode[]>("/api/admin/session-codes", fetcher, {
+  const { data: codes, error, mutate } = useSWR<SessionCode[]>("/api/admin/session-codes", fetcher, {
     refreshInterval: 5000,
   });
 
@@ -88,6 +91,18 @@ export default function SessionCodesPage() {
     if (new Date() > new Date(code.expiresAt)) return "expired";
     return "active";
   };
+
+  if (error) {
+    return (
+      <div className="flex flex-col gap-4 p-4 md:p-6">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-red-500">Failed to load session codes</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4 p-4 md:p-6">
@@ -141,46 +156,60 @@ export default function SessionCodesPage() {
                 </tr>
               </thead>
               <tbody>
-                {codes?.map((code) => {
-                  const status = getStatus(code);
-                  return (
-                    <tr key={code.id} className="border-b hover:bg-muted/50">
-                      <td className="px-4 py-3 font-mono">{code.code}</td>
-                      <td className="px-4 py-3">
-                        <Badge
-                          variant={
-                            status === "active"
-                              ? "default"
-                              : status === "used"
-                              ? "secondary"
-                              : "destructive"
-                          }
-                        >
-                          {status}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        {format(code.createdAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {format(code.expiresAt)}
-                      </td>
-                      <td className="px-4 py-3">
-                        {code.usedAt ? format(code.usedAt) : "-"}
-                      </td>
-                      <td className="px-4 py-3">{code.createdBy?.name || "-"}</td>
-                      <td className="px-4 py-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => copyCode(code.code)}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                {!codes ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      Loading...
+                    </td>
+                  </tr>
+                ) : codes.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
+                      No session codes yet
+                    </td>
+                  </tr>
+                ) : (
+                  codes.map((code) => {
+                    const status = getStatus(code);
+                    return (
+                      <tr key={code.id} className="border-b hover:bg-muted/50">
+                        <td className="px-4 py-3 font-mono">{code.code}</td>
+                        <td className="px-4 py-3">
+                          <Badge
+                            variant={
+                              status === "active"
+                                ? "default"
+                                : status === "used"
+                                ? "secondary"
+                                : "destructive"
+                            }
+                          >
+                            {status}
+                          </Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          {format(code.createdAt)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {format(code.expiresAt)}
+                        </td>
+                        <td className="px-4 py-3">
+                          {code.usedAt ? format(code.usedAt) : "-"}
+                        </td>
+                        <td className="px-4 py-3">{code.createdByUser?.name || "-"}</td>
+                        <td className="px-4 py-3">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => copyCode(code.code)}
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>

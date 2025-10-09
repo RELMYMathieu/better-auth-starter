@@ -1,4 +1,5 @@
 import { pgTable, text, timestamp, boolean } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -9,10 +10,10 @@ export const user = pgTable("user", {
     .notNull(),
   image: text("image"),
   createdAt: timestamp("created_at")
-    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .$defaultFn(() => new Date())
     .notNull(),
   updatedAt: timestamp("updated_at")
-    .$defaultFn(() => /* @__PURE__ */ new Date())
+    .$defaultFn(() => new Date())
     .notNull(),
   role: text("role"),
   banned: boolean("banned"),
@@ -58,10 +59,10 @@ export const verification = pgTable("verification", {
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").$defaultFn(
-    () => /* @__PURE__ */ new Date(),
+    () => new Date(),
   ),
   updatedAt: timestamp("updated_at").$defaultFn(
-    () => /* @__PURE__ */ new Date(),
+    () => new Date(),
   ),
 });
 
@@ -79,3 +80,14 @@ export const sessionCode = pgTable("session_code", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
 });
+
+export const sessionCodeRelations = relations(sessionCode, ({ one }) => ({
+  createdByUser: one(user, {
+    fields: [sessionCode.createdBy],
+    references: [user.id],
+  }),
+}));
+
+export const userRelations = relations(user, ({ many }) => ({
+  sessionCodes: many(sessionCode),
+}));
