@@ -13,8 +13,6 @@ export const sendEmail = async (payload: {
       ...payload,
     });
 
-    console.log("Email sent successfully:", response);
-
     if (response?.data) return true;
     return false;
   } catch (error: any) {
