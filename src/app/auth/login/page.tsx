@@ -1,75 +1,137 @@
 "use client";
 
-import Link from "next/link";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import React, { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import LoginForm from "@/components/auth/login-form";
-import { Card, CardContent } from "@/components/ui/card";
-import { GoogleIcon, GithubIcon } from "@/components/ui/icons";
-import { signInWithGithub, signInWithGoogle } from "@/lib/auth-client";
-import { GalleryVerticalEnd } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginUser } from "@/app/auth/login/action";
+import { FormSuccess, FormError } from "@/components/ui/form-messages";
 
-const LoginPage = () => {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-neutral-100">
-      <div className="flex flex-col items-center w-full max-w-md gap-6">
-        <a href="#" className="flex items-center gap-2 self-center font-medium">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-            <GalleryVerticalEnd className="size-4" />
-          </div>
-          Zexa Better Auth
-        </a>
-        <Card className="w-full">
-          <CardContent className="flex flex-col gap-4 pt-6">
-            <LoginForm />
-            <div className="flex items-center my-2">
-              <div className="flex-1 h-px bg-muted-foreground/30" />
-              <span className="mx-3 text-muted-foreground text-xs font-medium">
-                OR
-              </span>
-              <div className="flex-1 h-px bg-muted-foreground/30" />
-            </div>
-            <div className="flex flex-row gap-2 w-full">
-              <Button
-                variant="outline"
-                className="w-1/2 flex items-center justify-center cursor-pointer"
-                type="button"
-                onClick={signInWithGoogle}
-              >
-                <GoogleIcon className="mr-2" />
-                Google
-              </Button>
-              <Button
-                variant="outline"
-                className="w-1/2 flex items-center justify-center cursor-pointer"
-                type="button"
-                onClick={signInWithGithub}
-              >
-                <GithubIcon className="mr-2" />
-                GitHub
-              </Button>
-            </div>
-            <div className="text-center text-sm">
-              <Link
-                href="/auth/guest"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                Have a guest code?
-              </Link>
-            </div>
-            <div className="text-center text-sm mt-2">
-              Not registered?{" "}
-              <Link
-                href="/auth/register"
-                className="text-primary underline hover:no-underline font-medium"
-              >
-                Create an account
-              </Link>
-            </div>
-          </CardContent>
-        </Card>
+const schema = z.object({
+  email: z.string().email({ message: "Invalid email address" }),
+  password: z.string().min(1, { message: "Password is required" }),
+});
+
+type FormData = z.infer<typeof schema>;
+
+const LoginForm = () => {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  const [isVisible, setIsVisible] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [formState, setFormState] = useState<{
+    success?: string;
+    error?: string;
+  }>({});
+
+  const id = useId();
+  const router = useRouter();
+
+  const toggleVisibility = () => setIsVisible((prev) => !prev);
+
+  const onSubmit = async (data: FormData) => {
+    setFormState({});
+    const result = await loginUser(data);
+    
+    if (result.success) {
+      setFormState({ success: result.success.reason });
+      setIsRedirecting(true);
+      
+      router.refresh();
+      
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      router.push("/dashboard");
+    } else if (result.error) {
+      setFormState({ error: result.error.reason });
+    }
+  };
+
+  if (isRedirecting) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">Logging you in...</p>
       </div>
-    </div>
+    );
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="flex w-full flex-col gap-5"
+    >
+      <FormSuccess message={formState.success || ""} />
+      <FormError message={formState.error || ""} />
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="email">Email</Label>
+        <Input
+          id="email"
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
+          {...register("email")}
+        />
+        {errors.email && (
+          <span className="text-xs text-red-500">{errors.email.message}</span>
+        )}
+      </div>
+      <div className="flex flex-col gap-2">
+        <Label htmlFor={id}>Password</Label>
+        <div className="relative">
+          <Input
+            id={id}
+            type={isVisible ? "text" : "password"}
+            placeholder="Password"
+            autoComplete="current-password"
+            className="pe-9"
+            {...register("password")}
+          />
+          <button
+            className="text-muted-foreground/80 hover:text-foreground focus-visible:border-ring focus-visible:ring-ring/50 absolute inset-y-0 end-0 flex h-full w-9 items-center justify-center rounded-e-md transition-[color,box-shadow] outline-none focus:z-10 focus-visible:ring-[3px] disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50"
+            type="button"
+            onClick={toggleVisibility}
+            aria-label={isVisible ? "Hide password" : "Show password"}
+            aria-pressed={isVisible}
+            aria-controls="password"
+          >
+            {isVisible ? (
+              <EyeOffIcon size={16} aria-hidden="true" />
+            ) : (
+              <EyeIcon size={16} aria-hidden="true" />
+            )}
+          </button>
+        </div>
+        {errors.password && (
+          <span className="text-xs text-red-500">
+            {errors.password.message}
+          </span>
+        )}
+      </div>
+      <Button type="submit" className="mt-2 w-full" disabled={isSubmitting}>
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Logging in...
+          </>
+        ) : (
+          "Login"
+        )}
+      </Button>
+    </form>
   );
 };
 
-export default LoginPage;
+export default LoginForm;
