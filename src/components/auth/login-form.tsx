@@ -2,7 +2,6 @@
 
 import { z } from "zod";
 import { useForm } from "react-hook-form";
-import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useId, useState } from "react";
@@ -42,7 +41,6 @@ const LoginForm = () => {
   }>({});
 
   const id = useId();
-  const router = useRouter();
 
   const toggleVisibility = () => setIsVisible((prev) => !prev);
 
@@ -63,22 +61,14 @@ const LoginForm = () => {
 
   const onSubmit = async (data: FormData) => {
     setFormState({});
-    setShowResendLink(false);
     const result = await loginUser(data);
     
-    if (result.success) {
+    if (result.success && result.data?.redirect) {
       setFormState({ success: result.success.reason });
       setIsRedirecting(true);
       
-      router.refresh();
-      await new Promise(resolve => setTimeout(resolve, 500));
-      router.push("/dashboard");
+      window.location.href = result.data.redirect;
     } else if (result.error) {
-      // Check if error is about unverified email
-      if (result.error.reason.toLowerCase().includes("verify") || 
-          result.error.reason.toLowerCase().includes("verification")) {
-        setShowResendLink(true);
-      }
       setFormState({ error: result.error.reason });
     }
   };
