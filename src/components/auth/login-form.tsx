@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useId, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { EyeIcon, EyeOffIcon } from "lucide-react";
+import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../app/auth/login/action";
 import { FormSuccess, FormError } from "../ui/form-messages";
@@ -30,6 +30,7 @@ const LoginForm = () => {
   });
 
   const [isVisible, setIsVisible] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const [formState, setFormState] = useState<{
     success?: string;
     error?: string;
@@ -43,13 +44,32 @@ const LoginForm = () => {
   const onSubmit = async (data: FormData) => {
     setFormState({});
     const result = await loginUser(data);
+    
     if (result.success) {
       setFormState({ success: result.success.reason });
+      setIsRedirecting(true);
+      
+      // Refresh the router to pick up the new session
+      router.refresh();
+      
+      // Small delay to ensure session is established
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       router.push("/dashboard");
     } else if (result.error) {
       setFormState({ error: result.error.reason });
     }
   };
+
+  // Show loading state during redirect
+  if (isRedirecting) {
+    return (
+      <div className="flex flex-col items-center gap-4 py-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-muted-foreground text-sm">Logging you in...</p>
+      </div>
+    );
+  }
 
   return (
     <form
@@ -104,7 +124,14 @@ const LoginForm = () => {
         )}
       </div>
       <Button type="submit" className="mt-2 w-full" disabled={isSubmitting}>
-        {isSubmitting ? "Logging in..." : "Login"}
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Logging in...
+          </>
+        ) : (
+          "Login"
+        )}
       </Button>
     </form>
   );
