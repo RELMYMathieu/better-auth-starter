@@ -47,7 +47,14 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
-    resetPasswordTokenExpiresIn: 60 * 60,
+    resetPasswordTokenExpiresIn: 60 * 60, // 1 hour
+    sendResetPassword: async ({ user, url }) => {
+      await sendEmail({
+        to: user.email,
+        subject: "Reset your password",
+        text: `Click the link to reset your password: ${url}\n\nThis link will expire in 1 hour.\n\nIf you didn't request this, please ignore this email.`,
+      });
+    },
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url }) => {
@@ -59,6 +66,12 @@ export const auth = betterAuth({
     },
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
+  },
+  rateLimit: {
+    enabled: true,
+    window: 60, // 60 seconds
+    max: 10, // 10 requests per window
+    storage: "memory", // TODO: Use "database" for prod...
   },
   socialProviders: {
     github: {

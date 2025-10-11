@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { useForm } from "react-hook-form";
+import { useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import React, { useId, useState } from "react";
@@ -10,6 +11,8 @@ import { EyeIcon, EyeOffIcon, Loader2 } from "lucide-react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../app/auth/login/action";
 import { FormSuccess, FormError } from "../ui/form-messages";
+import Link from "next/link";
+import { resendVerificationEmail } from "@/app/auth/actions";
 
 const schema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -22,6 +25,7 @@ const LoginForm = () => {
   const {
     register,
     handleSubmit,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -30,26 +34,51 @@ const LoginForm = () => {
 
   const [isVisible, setIsVisible] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [showResendLink, setShowResendLink] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [formState, setFormState] = useState<{
     success?: string;
     error?: string;
   }>({});
 
   const id = useId();
+  const router = useRouter();
 
   const toggleVisibility = () => setIsVisible((prev) => !prev);
 
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    const email = getValues("email");
+    const result = await resendVerificationEmail(email);
+    
+    if (result.success) {
+      setFormState({ success: result.success.reason, error: undefined });
+      setShowResendLink(false);
+    } else if (result.error) {
+      setFormState({ error: result.error.reason, success: undefined });
+    }
+    
+    setIsResending(false);
+  };
 
   const onSubmit = async (data: FormData) => {
     setFormState({});
+    setShowResendLink(false);
     const result = await loginUser(data);
     
-    if (result.success && result.data?.redirect) {
+    if (result.success) {
       setFormState({ success: result.success.reason });
       setIsRedirecting(true);
       
-      window.location.href = result.data.redirect;
+      router.refresh();
+      await new Promise(resolve => setTimeout(resolve, 500));
+      router.push("/dashboard");
     } else if (result.error) {
+      // Check if error is about unverified email
+      if (result.error.reason.toLowerCase().includes("verify") || 
+          result.error.reason.toLowerCase().includes("verification")) {
+        setShowResendLink(true);
+      }
       setFormState({ error: result.error.reason });
     }
   };
@@ -70,6 +99,25 @@ const LoginForm = () => {
     >
       <FormSuccess message={formState.success || ""} />
       <FormError message={formState.error || ""} />
+      
+      {showResendLink && (
+        <div className="rounded bg-yellow-50 border border-yellow-200 px-3 py-2 text-sm">
+          <p className="text-yellow-800 mb-2">
+            Your email is not verified yet.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleResendVerification}
+            disabled={isResending}
+            className="w-full"
+          >
+            {isResending ? "Sending..." : "Resend verification email"}
+          </Button>
+        </div>
+      )}
+
       <div className="flex flex-col gap-2">
         <Label htmlFor="email">Email</Label>
         <Input
@@ -83,8 +131,17 @@ const LoginForm = () => {
           <span className="text-xs text-red-500">{errors.email.message}</span>
         )}
       </div>
+      
       <div className="flex flex-col gap-2">
-        <Label htmlFor={id}>Password</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor={id}>Password</Label>
+          <Link
+            href="/auth/forgot-password"
+            className="text-xs text-primary hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
         <div className="relative">
           <Input
             id={id}
@@ -115,6 +172,7 @@ const LoginForm = () => {
           </span>
         )}
       </div>
+      
       <Button type="submit" className="mt-2 w-full" disabled={isSubmitting}>
         {isSubmitting ? (
           <>

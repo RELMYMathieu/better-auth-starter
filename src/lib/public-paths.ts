@@ -10,7 +10,12 @@ export const publicPathsConfig = {
   exactPaths: ["/"],
 
   // Path prefixes - any path starting with these will be public
-  prefixes: ["/docs/", "/auth/", "/api/auth/", "/auth/guest"],
+  prefixes: [
+    "/docs/",
+    "/auth/",           // Covers login, register, logout, forgot-password, reset-password
+    "/api/auth/",       // Auth API routes
+    "/auth/guest",      // Guest access
+  ],
 };
 
 export function isPublicPath(pathname: string): boolean {
