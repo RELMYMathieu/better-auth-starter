@@ -14,7 +14,8 @@ export default function LogoutPage() {
     const handleLogout = async () => {
       try {
         await authClient.signOut();
-        router.push("/auth/login");
+        router.push("/");
+        router.refresh();
       } catch (err) {
         setError(
           err instanceof Error ? err.message : "An unexpected error occurred"
@@ -33,10 +34,10 @@ export default function LogoutPage() {
             <div className="text-center">
               <p className="text-red-600 mb-4">{error}</p>
               <button
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/")}
                 className="text-primary hover:underline"
               >
-                Return to Dashboard
+                Return to Home
               </button>
             </div>
           ) : (
