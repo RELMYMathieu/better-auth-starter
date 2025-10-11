@@ -26,81 +26,14 @@ interface Session {
   createdAt: string;
   updatedAt: string;
   isCurrent: boolean;
+  deviceInfo: {
+    device: string;
+    browser: string;
+    os: string;
+  };
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
-
-function parseUserAgent(ua: string | null) {
-  if (!ua) return { device: "Unknown", browser: "Unknown", os: "Unknown" };
-
-  let device = "Desktop";
-  if (/tablet|ipad|playbook|silk/i.test(ua)) {
-    device = "Tablet";
-  } else if (/mobile|iphone|ipod|blackberry|iemobile|opera mini/i.test(ua)) {
-    device = "Mobile";
-  }
-
-  let browser = "Unknown";
-  if (/edg\//i.test(ua)) {
-    browser = "Edge";
-  } else if (/opr\//i.test(ua) || /opera/i.test(ua)) {
-    browser = "Opera";
-  } else if (/chrome|chromium|crios/i.test(ua) && !/edg/i.test(ua)) {
-    browser = "Chrome";
-  } else if (/safari/i.test(ua) && !/chrome|chromium|edg/i.test(ua)) {
-    browser = "Safari";
-  } else if (/firefox|fxios/i.test(ua)) {
-    browser = "Firefox";
-  } else if (/trident/i.test(ua) || /msie/i.test(ua)) {
-    browser = "Internet Explorer";
-  }
-
-  let os = "Unknown";
-  if (/windows nt 10/i.test(ua)) {
-    os = "Windows 10/11";
-  } else if (/windows nt 6.3/i.test(ua)) {
-    os = "Windows 8.1";
-  } else if (/windows nt 6.2/i.test(ua)) {
-    os = "Windows 8";
-  } else if (/windows nt 6.1/i.test(ua)) {
-    os = "Windows 7";
-  } else if (/windows/i.test(ua)) {
-    os = "Windows";
-  } else if (/macintosh|mac os x/i.test(ua)) {
-    const macVersion = ua.match(/mac os x (\d+)[._](\d+)/i);
-    if (macVersion) {
-      os = `macOS ${macVersion[1]}.${macVersion[2]}`;
-    } else {
-      os = "macOS";
-    }
-  } else if (/iphone|ipad|ipod/i.test(ua)) {
-    const iosVersion = ua.match(/os (\d+)[._](\d+)/i);
-    if (iosVersion) {
-      os = `iOS ${iosVersion[1]}.${iosVersion[2]}`;
-    } else {
-      os = "iOS";
-    }
-  } else if (/android/i.test(ua)) {
-    const androidVersion = ua.match(/android (\d+(\.\d+)?)/i);
-    if (androidVersion) {
-      os = `Android ${androidVersion[1]}`;
-    } else {
-      os = "Android";
-    }
-  } else if (/linux/i.test(ua)) {
-    os = "Linux";
-  } else if (/ubuntu/i.test(ua)) {
-    os = "Ubuntu";
-  } else if (/debian/i.test(ua)) {
-    os = "Debian";
-  } else if (/fedora/i.test(ua)) {
-    os = "Fedora";
-  } else if (/cros/i.test(ua)) {
-    os = "Chrome OS";
-  }
-
-  return { device, browser, os };
-}
 
 function getDeviceIcon(device: string) {
   switch (device) {
@@ -182,7 +115,7 @@ export function SessionsManager() {
   return (
     <div className="space-y-4">
       {sessions.map((session) => {
-        const { device, browser, os } = parseUserAgent(session.userAgent);
+        const { device, browser, os } = session.deviceInfo;
         const isRevoking = revokingId === session.id;
 
         return (
@@ -239,7 +172,7 @@ export function SessionsManager() {
                     </div>
 
                     {/* Show device type for clarity */}
-                    {device !== "Desktop" && (
+                    {device !== "Desktop" && device !== "Unknown" && (
                       <div className="flex items-center gap-2 text-xs">
                         {getDeviceIcon(device)}
                         <span className="truncate">{device}</span>
