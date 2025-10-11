@@ -17,7 +17,7 @@ import { LogOut, Shield, User } from "lucide-react";
 import Image from "next/image";
 
 const Navbar = () => {
-  const { signOut, useSession } = authClient;
+  const { useSession } = authClient;
   const { data: session } = useSession();
 
   const isAdmin = session?.user?.role === "admin";
@@ -131,12 +131,14 @@ const Navbar = () => {
                   )}
 
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => signOut()}
-                    className="cursor-pointer text-destructive focus:text-destructive"
-                  >
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Sign Out
+                  <DropdownMenuItem asChild>
+                    <Link 
+                      href="/auth/logout"
+                      className="cursor-pointer text-destructive focus:text-destructive"
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign Out
+                    </Link>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

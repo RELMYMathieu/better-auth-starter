@@ -1,10 +1,8 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Users, Settings, LogOut, GalleryVerticalEnd, Ticket } from "lucide-react";
-import { authClient } from "@/lib/auth-client";
 
 import {
   Sidebar,
@@ -33,17 +31,6 @@ const sidebarNavItems = [
 
 export function DashboardSidebar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { signOut } = authClient;
-
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      router.push("/auth/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
 
   return (
     <Sidebar collapsible="offcanvas" variant="inset">
@@ -98,15 +85,11 @@ export function DashboardSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              tooltip="Logout"
-              className="cursor-pointer"
-            >
-              <button onClick={handleLogout}>
+            <SidebarMenuButton asChild tooltip="Logout">
+              <Link href="/auth/logout">
                 <LogOut className="h-4 w-4" />
                 <span>Logout</span>
-              </button>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
