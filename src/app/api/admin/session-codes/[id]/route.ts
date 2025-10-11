@@ -7,7 +7,7 @@ import { eq } from "drizzle-orm";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -18,7 +18,9 @@ export async function DELETE(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    await db.delete(sessionCode).where(eq(sessionCode.id, params.id));
+    const { id } = await params;
+
+    await db.delete(sessionCode).where(eq(sessionCode.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
@@ -32,7 +34,7 @@ export async function DELETE(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await auth.api.getSession({
@@ -43,10 +45,12 @@ export async function PATCH(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
+    const { id } = await params;
+
     await db
       .update(sessionCode)
       .set({ used: true, usedAt: new Date() })
-      .where(eq(sessionCode.id, params.id));
+      .where(eq(sessionCode.id, id));
 
     return NextResponse.json({ success: true });
   } catch (error) {
