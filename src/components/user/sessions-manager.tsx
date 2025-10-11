@@ -33,7 +33,12 @@ interface Session {
   };
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then((res) => {
+  if (!res.ok) {
+    throw new Error(res.status === 401 ? 'Unauthorized' : 'Failed to fetch sessions');
+  }
+  return res.json();
+});
 
 function getDeviceIcon(device: string) {
   switch (device) {
@@ -52,11 +57,12 @@ function getBrowserIcon(browser: string) {
 }
 
 export function SessionsManager() {
-  const { data: sessions, error, mutate, isLoading } = useSWR<Session[]>(
+  const { data, error, mutate, isLoading } = useSWR<Session[]>(
     "/api/user/sessions",
     fetcher,
     {
       refreshInterval: 30000,
+      shouldRetryOnError: false,
     }
   );
 
@@ -85,12 +91,14 @@ export function SessionsManager() {
   if (error) {
     return (
       <div className="text-center py-8 text-destructive">
-        Failed to load sessions. Please try again.
+        {error.message === 'Unauthorized' 
+          ? 'Please log in again to view your sessions.'
+          : 'Failed to load sessions. Please try again.'}
       </div>
     );
   }
 
-  if (isLoading || !sessions) {
+  if (isLoading || !data) {
     return (
       <div className="space-y-4">
         {[1, 2, 3].map((i) => (
@@ -108,6 +116,17 @@ export function SessionsManager() {
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  // Defensive check: ensure data is an array
+  const sessions = Array.isArray(data) ? data : [];
+
+  if (sessions.length === 0) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        No active sessions found.
       </div>
     );
   }
@@ -206,12 +225,6 @@ export function SessionsManager() {
           </div>
         );
       })}
-
-      {sessions.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          No active sessions found.
-        </div>
-      )}
     </div>
   );
 }
