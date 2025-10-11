@@ -10,7 +10,7 @@ import PasswordInput from "./password-input";
 import { registerSchema, RegisterSchema } from "@/lib/schemas";
 import { registerUser } from "@/app/auth/register/action";
 import { FormSuccess, FormError } from "../ui/form-messages";
-import { resendVerificationEmail } from "@/app/auth/actions";
+import { EmailVerificationResend } from "./email-verification-resend";
 
 const RegisterForm = () => {
   const [formState, setFormState] = React.useState<{
@@ -18,7 +18,6 @@ const RegisterForm = () => {
     error?: string;
   }>({});
   const [registeredEmail, setRegisteredEmail] = React.useState<string | null>(null);
-  const [isResending, setIsResending] = React.useState(false);
 
   const {
     register,
@@ -29,21 +28,6 @@ const RegisterForm = () => {
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", password: "" },
   });
-
-  const handleResendVerification = async () => {
-    if (!registeredEmail) return;
-    
-    setIsResending(true);
-    const result = await resendVerificationEmail(registeredEmail);
-    
-    if (result.success) {
-      setFormState({ success: result.success.reason, error: undefined });
-    } else if (result.error) {
-      setFormState({ error: result.error.reason, success: undefined });
-    }
-    
-    setIsResending(false);
-  };
 
   const onSubmit = async (data: RegisterSchema) => {
     setFormState({});
@@ -67,21 +51,7 @@ const RegisterForm = () => {
       <FormError message={formState.error || ""} />
       
       {registeredEmail && formState.success && (
-        <div className="rounded bg-blue-50 border border-blue-200 px-3 py-2 text-sm">
-          <p className="text-blue-800 mb-2">
-            Didn&#39;t receive the email?
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleResendVerification}
-            disabled={isResending}
-            className="w-full"
-          >
-            {isResending ? "Sending..." : "Resend verification email"}
-          </Button>
-        </div>
+        <EmailVerificationResend email={registeredEmail} />
       )}
 
       <div className="flex flex-col gap-2">

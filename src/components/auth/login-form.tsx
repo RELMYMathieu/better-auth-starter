@@ -11,7 +11,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser } from "../../app/auth/login/action";
 import { FormSuccess, FormError } from "../ui/form-messages";
 import Link from "next/link";
-import { resendVerificationEmail } from "@/app/auth/actions";
+import { EmailVerificationResend } from "./email-verification-resend";
 
 const schema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -33,8 +33,7 @@ const LoginForm = () => {
 
   const [isVisible, setIsVisible] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const [showResendLink, setShowResendLink] = useState(false);
-  const [isResending, setIsResending] = useState(false);
+  const [showResendBox, setShowResendBox] = useState(false);
   const [formState, setFormState] = useState<{
     success?: string;
     error?: string;
@@ -44,25 +43,9 @@ const LoginForm = () => {
 
   const toggleVisibility = () => setIsVisible((prev) => !prev);
 
-  const handleResendVerification = async () => {
-    setIsResending(true);
-    setShowResendLink(false);
-    const email = getValues("email");
-    const result = await resendVerificationEmail(email);
-    
-    if (result.success) {
-      setFormState({ success: result.success.reason, error: undefined });
-    } else if (result.error) {
-      setFormState({ error: result.error.reason, success: undefined });
-      setShowResendLink(true);
-    }
-    
-    setIsResending(false);
-  };
-
   const onSubmit = async (data: FormData) => {
     setFormState({});
-    setShowResendLink(false);
+    setShowResendBox(false);
     const result = await loginUser(data);
     
     if (result.success && result.data?.redirect) {
@@ -74,7 +57,7 @@ const LoginForm = () => {
       setFormState({ error: result.error.reason });
       
       if (result.data?.emailNotVerified) {
-        setShowResendLink(true);
+        setShowResendBox(true);
       }
     }
   };
@@ -96,22 +79,8 @@ const LoginForm = () => {
       <FormSuccess message={formState.success || ""} />
       <FormError message={formState.error || ""} />
       
-      {showResendLink && (
-        <div className="rounded bg-yellow-50 border border-yellow-200 px-3 py-2 text-sm">
-          <p className="text-yellow-800 mb-2">
-            Your email is not verified yet.
-          </p>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleResendVerification}
-            disabled={isResending}
-            className="w-full"
-          >
-            {isResending ? "Sending..." : "Resend verification email"}
-          </Button>
-        </div>
+      {showResendBox && (
+        <EmailVerificationResend email={getValues("email")} />
       )}
 
       <div className="flex flex-col gap-2">
