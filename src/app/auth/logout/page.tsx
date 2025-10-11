@@ -13,18 +13,12 @@ export default function LogoutPage() {
   useEffect(() => {
     const handleLogout = async () => {
       try {
-        await authClient.signOut({
-          fetchOptions: {
-            onSuccess: () => {
-              router.push("/auth/login");
-            },
-            onError: (ctx) => {
-              setError(ctx.error.message || "Failed to log out");
-            },
-          },
-        });
+        await authClient.signOut();
+        router.push("/auth/login");
       } catch (err) {
-        setError("An unexpected error occurred" + (err instanceof Error ? `: ${err.message}` : ""));
+        setError(
+          err instanceof Error ? err.message : "An unexpected error occurred"
+        );
       }
     };
 
