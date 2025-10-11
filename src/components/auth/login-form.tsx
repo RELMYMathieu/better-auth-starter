@@ -46,14 +46,15 @@ const LoginForm = () => {
 
   const handleResendVerification = async () => {
     setIsResending(true);
+    setShowResendLink(false);
     const email = getValues("email");
     const result = await resendVerificationEmail(email);
     
     if (result.success) {
       setFormState({ success: result.success.reason, error: undefined });
-      setShowResendLink(false);
     } else if (result.error) {
       setFormState({ error: result.error.reason, success: undefined });
+      setShowResendLink(true);
     }
     
     setIsResending(false);
@@ -61,6 +62,7 @@ const LoginForm = () => {
 
   const onSubmit = async (data: FormData) => {
     setFormState({});
+    setShowResendLink(false);
     const result = await loginUser(data);
     
     if (result.success && result.data?.redirect) {
@@ -70,6 +72,10 @@ const LoginForm = () => {
       window.location.href = result.data.redirect;
     } else if (result.error) {
       setFormState({ error: result.error.reason });
+      
+      if (result.data?.emailNotVerified) {
+        setShowResendLink(true);
+      }
     }
   };
 

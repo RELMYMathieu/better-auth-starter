@@ -11,7 +11,7 @@ export async function loginUser({
 }: {
   email: string;
   password: string;
-}): Promise<ActionResult<{ user: { id: string; email: string }; redirect: string }>> {
+}): Promise<ActionResult<{ user: { id: string; email: string }; redirect: string; emailNotVerified?: boolean }>> {
   try {
     await auth.api.signInEmail({ body: { email, password } });
 
@@ -25,9 +25,18 @@ export async function loginUser({
     };
   } catch (err) {
     if (err instanceof APIError) {
+      const isEmailNotVerified = 
+        err.message?.toLowerCase().includes("email") && 
+        err.message?.toLowerCase().includes("verif");
+
       return {
         error: { reason: err.message },
         success: null,
+        data: isEmailNotVerified ? { 
+          user: { id: "", email }, 
+          redirect: "",
+          emailNotVerified: true 
+        } : undefined,
       };
     }
 
