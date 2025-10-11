@@ -192,7 +192,18 @@ export function UsersTable() {
     </div>
   );
 
-  if (error) return <div>Failed to load users</div>;
+  // Handle error state (e.g., unauthorized after logout)
+  if (error) {
+    return (
+      <div className="space-y-4">
+        {filterControls}
+        <div className="text-center py-8 text-destructive">
+          Failed to load users. {error.message === "Unauthorized" ? "Please log in again." : "Please try refreshing the page."}
+        </div>
+      </div>
+    );
+  }
+
   if (!data)
     return (
       <div className="space-y-4 border-accent-foreground">
@@ -267,7 +278,8 @@ export function UsersTable() {
       </div>
     );
 
-  const { users, total, totalPages } = data;
+  // Safe destructuring with defaults - FIX FOR ISSUE #1
+  const { users = [], total = 0, totalPages = 0 } = data || {};
 
   // Pagination logic for shadcn/ui Pagination
   const renderPagination = () => {
