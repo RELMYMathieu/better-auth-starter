@@ -33,7 +33,8 @@ export function AccountSettings() {
       
       toast.success("Data exported successfully");
     } catch (error) {
-      toast.error("Failed to export data" + (error instanceof Error ? `: ${error.message}` : ""));
+      toast.error("Failed to export data");
+      console.error(error);
     }
   };
 
@@ -61,7 +62,14 @@ export function AccountSettings() {
     }
   };
 
-  const handleChangeEmail = async () => {
+  const handleChangeEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!newEmail || !newEmail.includes("@")) {
+      toast.error("Please enter a valid email address");
+      return;
+    }
+
     setIsChangingEmail(true);
     try {
       const response = await fetch("/api/user/email-change/request", {
@@ -70,12 +78,13 @@ export function AccountSettings() {
         body: JSON.stringify({ newEmail }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
         throw new Error(data.error || "Failed to request email change");
       }
 
-      toast.success("Confirmation email sent to new address");
+      toast.success("Confirmation email sent to new address. Please check your inbox.");
       setNewEmail("");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to change email");
@@ -93,26 +102,26 @@ export function AccountSettings() {
             Change Email Address
           </CardTitle>
           <CardDescription>
-            Update your email address. You&#39;ll need to confirm the new address.
+            Update your email address. You&#39;ll receive a confirmation link at your new email.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="newEmail">New Email Address</Label>
-            <Input
-              id="newEmail"
-              type="email"
-              placeholder="new@example.com"
-              value={newEmail}
-              onChange={(e) => setNewEmail(e.target.value)}
-            />
-          </div>
-          <Button
-            onClick={handleChangeEmail}
-            disabled={isChangingEmail || !newEmail}
-          >
-            {isChangingEmail ? "Sending..." : "Change Email"}
-          </Button>
+        <CardContent>
+          <form onSubmit={handleChangeEmail} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newEmail">New Email Address</Label>
+              <Input
+                id="newEmail"
+                type="email"
+                placeholder="new@example.com"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                required
+              />
+            </div>
+            <Button type="submit" disabled={isChangingEmail || !newEmail}>
+              {isChangingEmail ? "Sending..." : "Change Email"}
+            </Button>
+          </form>
         </CardContent>
       </Card>
 
@@ -158,11 +167,11 @@ export function AccountSettings() {
                   <AlertTriangle className="h-5 w-5 text-destructive" />
                   Are you absolutely sure?
                 </AlertDialogTitle>
-                <AlertDialogDescription className="space-y-4">
-                  <p>
+                <div className="space-y-4">
+                  <AlertDialogDescription>
                     This will permanently delete your account and remove all your data from our servers.
                     This action cannot be undone.
-                  </p>
+                  </AlertDialogDescription>
                   <div className="space-y-2">
                     <Label htmlFor="confirmDelete">
                       Type <strong>DELETE MY ACCOUNT</strong> to confirm:
@@ -174,7 +183,7 @@ export function AccountSettings() {
                       placeholder="DELETE MY ACCOUNT"
                     />
                   </div>
-                </AlertDialogDescription>
+                </div>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>

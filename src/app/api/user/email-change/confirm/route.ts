@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Token required" }, { status: 400 });
     }
 
+    // Find the change request
     const [changeRequest] = await db
       .select()
       .from(emailChangeRequest)
@@ -32,11 +33,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if email is already in use
     const existingUser = await db.query.user.findFirst({
       where: eq(user.email, changeRequest.newEmail),
     });
 
     if (existingUser) {
+      // Clean up the request
       await db.delete(emailChangeRequest).where(eq(emailChangeRequest.id, changeRequest.id));
       
       return NextResponse.json(
@@ -45,6 +48,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Update the user's email
     await db
       .update(user)
       .set({ 
@@ -53,14 +57,37 @@ export async function POST(request: NextRequest) {
       })
       .where(eq(user.id, changeRequest.userId));
 
+    // Delete the used request
     await db.delete(emailChangeRequest).where(eq(emailChangeRequest.id, changeRequest.id));
 
-    await sendEmail({
-      to: changeRequest.currentEmail,
-      subject: "Email address changed",
-      text: `Your email address has been successfully changed to ${changeRequest.newEmail}.\n\nIf you didn't make this change, please contact support immediately.`,
-    });
+    // Delete all other pending requests for this user
+    await db
+      .delete(emailChangeRequest)
+      .where(eq(emailChangeRequest.userId, changeRequest.userId));
 
+    // Send confirmation to old email
+    try {
+      await sendEmail({
+        to: changeRequest.currentEmail,
+        subject: "Email address changed",
+        text: `Your email address has been successfully changed to ${changeRequest.newEmail}.\n\nIf you didn't make this change, please contact support immediately.`,
+      });
+    } catch (emailError) {
+      console.error("Failed to send confirmation to old email:", emailError);
+    }
+
+    // Send welcome to new email
+    try {
+      await sendEmail({
+        to: changeRequest.newEmail,
+        subject: "Email address updated",
+        text: `Your email address has been successfully updated.\n\nYou can now use ${changeRequest.newEmail} to log in to your account.`,
+      });
+    } catch (emailError) {
+      console.error("Failed to send confirmation to new email:", emailError);
+    }
+
+    // Log the change
     await logAuditEvent({
       eventType: "EMAIL_CHANGE_COMPLETE",
       category: "USER",
