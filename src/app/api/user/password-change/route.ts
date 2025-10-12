@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, type Session } from "@/lib/auth";
 import { headers } from "next/headers";
-import { db } from "@/db";
-import { account } from "@/db/schema";
-import { eq, and } from "drizzle-orm";
 import { logPasswordChange } from "@/utils/audit-logger";
 import { sendEmail } from "@/lib/email";
-import * as bcrypt from "bcryptjs";
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,49 +31,22 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the user's credential account
-    const [credentialAccount] = await db
-      .select()
-      .from(account)
-      .where(
-        and(
-          eq(account.userId, session.user.id),
-          eq(account.providerId, "credential")
-        )
-      )
-      .limit(1);
-
-    if (!credentialAccount || !credentialAccount.password) {
+    // Use Better Auth's password change API
+    try {
+      await auth.api.changePassword({
+        body: {
+          newPassword,
+          currentPassword,
+        },
+        headers: await headers(),
+      });
+    } catch (error: any) {
+      // Better Auth will throw if current password is wrong
       return NextResponse.json(
-        { error: "No password account found. You may be using OAuth." },
+        { error: error.message || "Current password is incorrect" },
         { status: 400 }
       );
     }
-
-    // Verify current password
-    const isValid = await bcrypt.compare(
-      currentPassword,
-      credentialAccount.password
-    );
-
-    if (!isValid) {
-      return NextResponse.json(
-        { error: "Current password is incorrect" },
-        { status: 400 }
-      );
-    }
-
-    // Hash new password
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
-    await db
-      .update(account)
-      .set({
-        password: hashedPassword,
-        updatedAt: new Date(),
-      })
-      .where(eq(account.id, credentialAccount.id));
 
     const ipAddress = request.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
     const userAgent = request.headers.get("user-agent") || "unknown";
