@@ -1,12 +1,21 @@
 import { authClient } from "@/lib/auth-client";
+import { db } from "@/db";
+import { session as sessionTable } from "@/db/schema";
+import { eq } from "drizzle-orm";
 
 const adminAPI = (authClient as any).admin;
+
+async function revokeAllUserSessions(userId: string): Promise<void> {
+  await db.delete(sessionTable).where(eq(sessionTable.userId, userId));
+}
 
 export async function banUser(
   userId: string,
   banReason: string,
   banExpiresIn?: number,
 ) {
+  await revokeAllUserSessions(userId);
+
   const res = await adminAPI.banUser({
     userId,
     banReason,
@@ -33,6 +42,8 @@ export async function unbanUser(userId: string) {
 }
 
 export async function deleteUser(userId: string) {
+  await revokeAllUserSessions(userId);
+
   const res = await adminAPI.removeUser({
     userId,
   });
@@ -45,15 +56,8 @@ export async function deleteUser(userId: string) {
 }
 
 export async function revokeUserSessions(userId: string) {
-  const res = await adminAPI.revokeUserSessions({
-    userId,
-  });
-
-  if (res?.error) {
-    throw new Error(res.error.message || "Failed to revoke user sessions");
-  }
-
-  return res;
+  await revokeAllUserSessions(userId);
+  return { success: true };
 }
 
 export async function createUser(data: {

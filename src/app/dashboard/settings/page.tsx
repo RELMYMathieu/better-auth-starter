@@ -1,5 +1,5 @@
-// src/app/dashboard/settings/page.tsx
 import { SessionsManager } from "@/components/user/sessions-manager";
+import { AccountSettings } from "@/components/user/account-settings";
 import Navbar from "@/components/landing/navbar";
 import {
   Card,
@@ -19,6 +19,21 @@ export default function SettingsPage() {
           <p className="text-muted-foreground mt-2">
             Manage your account settings and active sessions
           </p>
+        </div>
+
+        <div>
+          {/* Account Settings Section */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Account Settings</CardTitle>
+              <CardDescription>
+                Update your account information and preferences.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <AccountSettings />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="space-y-6">
