@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { APIError } from "better-auth/api";
 import { ActionResult } from "@/lib/schemas";
 import { DEFAULT_LOGIN_REDIRECT } from "@/lib/config";
@@ -13,7 +14,10 @@ export async function loginUser({
   password: string;
 }): Promise<ActionResult<{ user: { id: string; email: string }; redirect: string; emailNotVerified?: boolean }>> {
   try {
-    await auth.api.signInEmail({ body: { email, password } });
+    await auth.api.signInEmail({ 
+      body: { email, password },
+      headers: await headers()
+    });
 
     return {
       success: { reason: "Login successful" },

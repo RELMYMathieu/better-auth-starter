@@ -2,6 +2,7 @@
 
 import { auth } from "@/lib/auth";
 import { APIError } from "better-auth/api";
+import { headers } from "next/headers";
 import { ActionResult } from "@/lib/schemas";
 import { registerSchema, RegisterSchema } from "@/lib/schemas";
 import { DEFAULT_LOGIN_REDIRECT } from "@/lib/config";
@@ -32,6 +33,7 @@ export async function registerUser(
         banReason: undefined,
         banExpires: undefined,
       } as any,
+      headers: await headers()
     });
 
     return {

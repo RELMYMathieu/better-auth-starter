@@ -4,6 +4,7 @@ import { headers } from "next/headers";
 import { db } from "@/db";
 import { session as sessionTable } from "@/db/schema";
 import { eq, desc } from "drizzle-orm";
+import { UAParser } from "ua-parser-js";
 
 interface ParsedSession {
   id: string;
@@ -19,146 +20,61 @@ interface ParsedSession {
   };
 }
 
-function parseUserAgentString(ua: string | null): {
+function parseUserAgent(ua: string | null): {
   device: string;
   browser: string;
   os: string;
 } {
+  const defaultResult = { 
+    device: "Unknown Device", 
+    browser: "Unknown Browser", 
+    os: "Unknown OS" 
+  };
+
   if (!ua) {
-    return { device: "Unknown", browser: "Unknown", os: "Unknown" };
+    return defaultResult;
   }
 
-  // Parse device type
-  let device = "Desktop";
-  if (/tablet|ipad|playbook|silk/i.test(ua)) {
-    device = "Tablet";
-  } else if (/mobile|iphone|ipod|android.*mobile|blackberry|iemobile|opera mini/i.test(ua)) {
-    device = "Mobile";
-  }
+  try {
+    const parser = new UAParser();
+    parser.setUA(ua);
+    const result = parser.getResult();
 
-  // Parse browser - ORDER MATTERS! Check most specific first
-  let browser = "Unknown";
-  
-  // Check for Edge first (contains both "Edg" and "Chrome")
-  if (/edg(?:e|a|ios)?\//i.test(ua)) {
-    browser = "Edge";
-  }
-  // Check for Opera (contains "OPR" or "Opera")
-  else if (/opr\//i.test(ua) || /opera/i.test(ua)) {
-    browser = "Opera";
-  }
-  // Check for Samsung Browser
-  else if (/samsungbrowser\//i.test(ua)) {
-    browser = "Samsung Browser";
-  }
-  // Check for UC Browser
-  else if (/ucbrowser|ucweb/i.test(ua)) {
-    browser = "UC Browser";
-  }
-  // Check for Chrome (must come after Edge check)
-  else if (/chrome|chromium|crios/i.test(ua)) {
-    browser = "Chrome";
-  }
-  // Check for Safari (must come after Chrome check since Chrome includes "Safari")
-  else if (/safari/i.test(ua) && !/chrome|chromium|edg/i.test(ua)) {
-    browser = "Safari";
-  }
-  // Check for Firefox
-  else if (/firefox|fxios/i.test(ua)) {
-    browser = "Firefox";
-  }
-  // Check for IE/Legacy Edge
-  else if (/trident|msie|edge\/[0-9]/i.test(ua)) {
-    browser = "Internet Explorer";
-  }
+    // Get device type with fallback
+    const deviceType = result.device.type || "desktop";
+    
+    // Map device types
+    const deviceMap: Record<string, string> = {
+      "mobile": "Mobile",
+      "tablet": "Tablet",
+      "desktop": "Desktop",
+      "smarttv": "Smart TV",
+      "wearable": "Wearable",
+      "console": "Console",
+      "embedded": "Embedded",
+      "xr": "XR"
+    };
+    const device = deviceMap[deviceType] || "Desktop";
 
-  // Parse OS with better version detection
-  let os = "Unknown";
-  
-  // Windows
-  if (/windows nt 10\.0/i.test(ua)) {
-    os = "Windows 10/11";
-  } else if (/windows nt 6\.3/i.test(ua)) {
-    os = "Windows 8.1";
-  } else if (/windows nt 6\.2/i.test(ua)) {
-    os = "Windows 8";
-  } else if (/windows nt 6\.1/i.test(ua)) {
-    os = "Windows 7";
-  } else if (/windows/i.test(ua)) {
-    os = "Windows";
-  }
-  // macOS
-  else if (/macintosh|mac os x/i.test(ua)) {
-    const macVersion = ua.match(/mac os x (\d+)[._](\d+)/i);
-    if (macVersion) {
-      const major = parseInt(macVersion[1]);
-      const minor = parseInt(macVersion[2]);
-      
-      // Map version numbers to macOS names
-      if (major === 10) {
-        const versionNames: Record<number, string> = {
-          15: "Catalina",
-          16: "Big Sur",
-        };
-        if (minor >= 15 && versionNames[minor]) {
-          os = `macOS ${versionNames[minor]}`;
-        } else {
-          os = `macOS 10.${minor}`;
-        }
-      } else if (major >= 11) {
-        const names: Record<number, string> = {
-          11: "Big Sur",
-          12: "Monterey",
-          13: "Ventura",
-          14: "Sonoma",
-          15: "Sequoia",
-        };
-        os = names[major] ? `macOS ${names[major]}` : `macOS ${major}`;
-      } else {
-        os = `macOS ${major}.${minor}`;
-      }
-    } else {
-      os = "macOS";
-    }
-  }
-  // iOS
-  else if (/iphone|ipad|ipod/i.test(ua)) {
-    const iosVersion = ua.match(/(?:iphone )?os (\d+)[._](\d+)/i);
-    if (iosVersion) {
-      os = `iOS ${iosVersion[1]}.${iosVersion[2]}`;
-    } else {
-      os = "iOS";
-    }
-  }
-  // Android
-  else if (/android/i.test(ua)) {
-    const androidVersion = ua.match(/android[\/\s](\d+(?:\.\d+)?)/i);
-    if (androidVersion) {
-      os = `Android ${androidVersion[1]}`;
-    } else {
-      os = "Android";
-    }
-  }
-  // Linux
-  else if (/linux/i.test(ua)) {
-    if (/ubuntu/i.test(ua)) {
-      os = "Ubuntu";
-    } else if (/debian/i.test(ua)) {
-      os = "Debian";
-    } else if (/fedora/i.test(ua)) {
-      os = "Fedora";
-    } else if (/arch/i.test(ua)) {
-      os = "Arch Linux";
-    } else {
-      os = "Linux";
-    }
-  }
-  // Chrome OS
-  else if (/cros/i.test(ua)) {
-    os = "Chrome OS";
-  }
+    // Get browser with version
+    const browserName = result.browser.name || "Unknown Browser";
+    const browserVersion = result.browser.major || "";
+    const browser = browserVersion 
+      ? `${browserName} ${browserVersion}` 
+      : browserName;
 
-  return { device, browser, os };
+    // Get OS with version
+    const osName = result.os.name || "Unknown OS";
+    const osVersion = result.os.version || "";
+    const os = osVersion 
+      ? `${osName} ${osVersion}` 
+      : osName;
+
+    return { device, browser, os };
+  } catch (error) {
+    console.error("[Sessions] Error parsing user agent:", error);
+    return defaultResult;
+  }
 }
 
 export async function GET(_request: NextRequest) {
@@ -179,7 +95,7 @@ export async function GET(_request: NextRequest) {
 
     // Parse user agents and enrich session data
     const sessionsWithParsedUA: ParsedSession[] = sessions.map((session) => {
-      const deviceInfo = parseUserAgentString(session.userAgent);
+      const deviceInfo = parseUserAgent(session.userAgent);
 
       return {
         id: session.id,
@@ -194,7 +110,7 @@ export async function GET(_request: NextRequest) {
 
     return NextResponse.json(sessionsWithParsedUA);
   } catch (error) {
-    console.error("Error fetching user sessions:", error);
+    console.error("[Sessions] Error fetching user sessions:", error);
     return NextResponse.json(
       { error: "Failed to fetch sessions" },
       { status: 500 }

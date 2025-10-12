@@ -13,6 +13,8 @@ import {
   Clock,
   LogOut,
   Shield,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,19 +43,35 @@ const fetcher = (url: string) => fetch(url).then((res) => {
 });
 
 function getDeviceIcon(device: string) {
-  switch (device) {
-    case "Mobile":
-      return <Smartphone className="h-5 w-5" />;
-    case "Tablet":
-      return <Tablet className="h-5 w-5" />;
-    default:
-      return <Monitor className="h-5 w-5" />;
+  const deviceLower = device.toLowerCase();
+  if (deviceLower.includes("mobile") || deviceLower.includes("phone")) {
+    return <Smartphone className="h-5 w-5" />;
   }
+  if (deviceLower.includes("tablet") || deviceLower.includes("ipad")) {
+    return <Tablet className="h-5 w-5" />;
+  }
+  return <Monitor className="h-5 w-5" />;
 }
 
 function getBrowserIcon(browser: string) {
-  if (browser === "Chrome") return <Chrome className="h-4 w-4" />;
+  const browserLower = browser.toLowerCase();
+  if (browserLower.includes("chrome")) return <Chrome className="h-4 w-4" />;
   return <Globe className="h-4 w-4" />;
+}
+
+function maskIpAddress(ip: string | null): string {
+  if (!ip) return "Unknown";
+  const parts = ip.split(".");
+  if (parts.length === 4) {
+    // IPv4: show first octet, hide rest
+    return `${parts[0]}.•••.•••.•••`;
+  }
+  // IPv6 or other: show first segment
+  const segments = ip.split(":");
+  if (segments.length > 1) {
+    return `${segments[0]}:••••:••••:••••`;
+  }
+  return "•••.•••.•••.•••";
 }
 
 export function SessionsManager() {
@@ -67,6 +85,19 @@ export function SessionsManager() {
   );
 
   const [revokingId, setRevokingId] = useState<string | null>(null);
+  const [revealedIps, setRevealedIps] = useState<Set<string>>(new Set());
+
+  const toggleIpReveal = (sessionId: string) => {
+    setRevealedIps(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(sessionId)) {
+        newSet.delete(sessionId);
+      } else {
+        newSet.add(sessionId);
+      }
+      return newSet;
+    });
+  };
 
   const handleRevokeSession = async (sessionId: string) => {
     if (!confirm("Are you sure you want to log out this session?")) return;
@@ -120,7 +151,6 @@ export function SessionsManager() {
     );
   }
 
-  // Defensive check: ensure data is an array
   const sessions = Array.isArray(data) ? data : [];
 
   if (sessions.length === 0) {
@@ -136,6 +166,7 @@ export function SessionsManager() {
       {sessions.map((session) => {
         const { device, browser, os } = session.deviceInfo;
         const isRevoking = revokingId === session.id;
+        const isIpRevealed = revealedIps.has(session.id);
 
         return (
           <div
@@ -168,18 +199,31 @@ export function SessionsManager() {
                   </div>
 
                   <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                    {/* IP Address with reveal button */}
                     {session.ipAddress && (
                       <div className="flex items-center gap-2">
                         <MapPin className="h-4 w-4 shrink-0" />
-                        <span className="truncate">{session.ipAddress}</span>
+                        <span className="font-mono text-xs">
+                          {isIpRevealed ? session.ipAddress : maskIpAddress(session.ipAddress)}
+                        </span>
+                        <button
+                          onClick={() => toggleIpReveal(session.id)}
+                          className="text-primary hover:text-primary/80 transition-colors"
+                          title={isIpRevealed ? "Hide IP address" : "Show IP address"}
+                        >
+                          {isIpRevealed ? (
+                            <EyeOff className="h-3.5 w-3.5" />
+                          ) : (
+                            <Eye className="h-3.5 w-3.5" />
+                          )}
+                        </button>
                       </div>
                     )}
 
                     <div className="flex items-center gap-2">
                       <Clock className="h-4 w-4 shrink-0" />
                       <span className="truncate">
-                        Last active{" "}
-                        {format(new Date(session.updatedAt), "PPp")}
+                        Last active {format(new Date(session.updatedAt), "PPp")}
                       </span>
                     </div>
 
@@ -190,13 +234,11 @@ export function SessionsManager() {
                       </span>
                     </div>
 
-                    {/* Show device type for clarity */}
-                    {device !== "Desktop" && device !== "Unknown" && (
-                      <div className="flex items-center gap-2 text-xs">
-                        {getDeviceIcon(device)}
-                        <span className="truncate">{device}</span>
-                      </div>
-                    )}
+                    {/* Device badge */}
+                    <div className="flex items-center gap-2 text-xs">
+                      {getDeviceIcon(device)}
+                      <span className="truncate">{device}</span>
+                    </div>
                   </div>
                 </div>
               </div>
